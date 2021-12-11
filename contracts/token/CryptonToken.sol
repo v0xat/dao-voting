@@ -2,7 +2,7 @@
 
 pragma solidity ^0.8.10;
 
-import "../Ownable.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "./ERC20.sol";
 
 /** @title Crypton token. */

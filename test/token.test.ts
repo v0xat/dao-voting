@@ -52,7 +52,7 @@ describe("CryptonToken", function () {
     it("Non owner should not be able to transfer ownership", async () => {
       await expect(
         cryptonToken.connect(alice).transferOwnership(alice.address)
-      ).to.be.revertedWith("Only owner can do this");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("Owner can transfer ownership", async () => {
@@ -209,7 +209,7 @@ describe("CryptonToken", function () {
       const burnAmount = ethers.utils.parseUnits("10.0", decimals);
       await expect(
         cryptonToken.connect(alice).burn(burnAmount)
-      ).to.be.revertedWith("Only owner can do this");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("Owner should be able to burn tokens", async () => {
@@ -245,7 +245,7 @@ describe("CryptonToken", function () {
       const mintAmount = ethers.utils.parseUnits("10.0", decimals);
       await expect(
         cryptonToken.connect(alice).mint(alice.address, mintAmount)
-      ).to.be.revertedWith("Only owner can do this");
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
     it("Owner should be able to mint tokens", async () => {
