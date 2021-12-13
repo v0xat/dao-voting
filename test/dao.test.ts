@@ -234,6 +234,21 @@ describe("CryptonDAO", function () {
         .withArgs(firstProp, false);
     });
 
+    it("Should not be able to successfully finish voting if votesFor < votesAgainst", async () => {
+      // Voting for proposal
+      await cryptonDAO.vote(firstProp, support);
+      // Voting against
+      await cryptonDAO.connect(alice).vote(firstProp, against);
+      await cryptonDAO.connect(bob).vote(firstProp, against);
+
+      // Skipping 3 days voting period
+      await ethers.provider.send("evm_increaseTime", [259200]);
+
+      await expect(cryptonDAO.finishVoting(firstProp))
+        .to.emit(cryptonDAO, "VotingFinished")
+        .withArgs(firstProp, false);
+    });
+
     it("Should be able to successfully finish voting and execute calldata", async () => {
       // Voting for proposal
       await cryptonDAO.vote(secondProp, support);

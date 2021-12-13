@@ -124,8 +124,11 @@ contract CryptonDAO {
 
         // console.log("total votes: ", proposals[propID].votesFor + proposals[propID].votesAgainst);
         // console.log("quorum: ", token.totalSupply() / 2);
-        // If reached 50% quorum, execute callData
-        if ((proposals[propID].votesFor + proposals[propID].votesAgainst) >= (token.totalSupply() / 2)) {
+
+        // If reached 50% quorum and votesFor > votesAgainst, execute callData
+        uint votesFor = proposals[propID].votesFor;
+        uint votesAgainst = proposals[propID].votesAgainst;
+        if ((votesFor + votesAgainst) >= (token.totalSupply() / 2) && votesFor > votesAgainst) {
             execute(proposals[propID].callData);
             emit VotingFinished(propID, true);
         } else {
