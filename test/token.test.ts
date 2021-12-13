@@ -3,18 +3,23 @@ import { ethers } from "hardhat";
 import { BigNumber, Contract, ContractFactory } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
+const tokenName = "CryptonToken";
+const symbol = "CRPT";
+const decimals = 2;
+const totalSupply = 1000;
+const feeRate = ethers.utils.parseUnits("1.5", decimals); // 1.5% fee
+
+// AccessControl roles in bytes32 string
+const adminRole = "0x0000000000000000000000000000000000000000000000000000000000000000";
+const minterRole = "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6";
+const burnerRole = "0x51f4231475d91734c657e212cfb2e9728a863d53c9057d6ce6ca203d6e5cfd5d";
+
 describe("CryptonToken", function () {
   let CryptonToken: ContractFactory;
   let owner: SignerWithAddress,
     alice: SignerWithAddress,
     bob: SignerWithAddress;
   let cryptonToken: Contract;
-
-  const tokenName = "CryptonToken";
-  const symbol = "CRPT";
-  const decimals = 2;
-  const totalSupply = 1000;
-  const feeRate = ethers.utils.parseUnits("1.5", decimals); // 1.5% fee
 
   before(async () => {
     [owner, alice, bob] = await ethers.getSigners();
@@ -29,6 +34,10 @@ describe("CryptonToken", function () {
       feeRate
     );
     await cryptonToken.deployed();
+
+    // Grant roles to Alice & Bob
+    await cryptonToken.grantRole(minterRole, alice.address);
+    await cryptonToken.grantRole(burnerRole, bob.address);
   });
 
   describe("Deployment", function () {
@@ -48,8 +57,25 @@ describe("CryptonToken", function () {
       expect(await cryptonToken.feeRate()).to.be.equal(feeRate);
     });
 
-    it("Should set the right owner", async () => {
-      expect(await cryptonToken.owner()).to.be.equal(owner.address);
+    it("Should set the right admin role", async () => {
+      expect(
+        await cryptonToken.hasRole(
+          cryptonToken.DEFAULT_ADMIN_ROLE(),
+          owner.address
+        )
+      ).to.equal(true);
+    });
+
+    it("Should set the right minter role", async () => {
+      expect(
+        await cryptonToken.hasRole(cryptonToken.MINTER_ROLE(), alice.address)
+      ).to.equal(true);
+    });
+
+    it("Should set the right burner role", async () => {
+      expect(
+        await cryptonToken.hasRole(cryptonToken.BURNER_ROLE(), bob.address)
+      ).to.equal(true);
     });
 
     it("Deployment should assign the total supply of tokens to the owner", async () => {
@@ -63,39 +89,42 @@ describe("CryptonToken", function () {
   });
 
   describe("Ownership", function () {
-    it("Non owner should not be able to transfer ownership", async () => {
+    it("Only admin can grant roles", async () => {
       await expect(
-        cryptonToken.connect(alice).transferOwnership(alice.address)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
-    });
-
-    it("Owner can transfer ownership", async () => {
-      await cryptonToken.transferOwnership(alice.address);
-      expect(await cryptonToken.owner()).to.be.equal(alice.address);
+        cryptonToken
+          .connect(alice)
+          .grantRole(cryptonToken.BURNER_ROLE(), alice.address)
+      ).to.be.revertedWith(
+        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
+      );
     });
   });
 
   describe("Fees", function () {
-    it("Non owner should not be able to change fee rate", async () => {
+    it("Should not be able to change fee rate without DEFAULT_ADMIN_ROLE", async () => {
       const newFee = ethers.utils.parseUnits("2", decimals);
       await expect(
         cryptonToken.connect(alice).changeFeeRate(newFee)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith(
+        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
+      );
     });
 
-    it("Owner can change fee rate", async () => {
+    it("Admin can change fee rate", async () => {
       const newFee = ethers.utils.parseUnits("3.5", decimals);
       await cryptonToken.changeFeeRate(newFee);
       expect(await cryptonToken.feeRate()).to.be.equal(newFee);
     });
 
-    it("Non owner should not be able to change fee recipient", async () => {
+    it("Should not be able to change fee recipient without DEFAULT_ADMIN_ROLE", async () => {
       await expect(
         cryptonToken.connect(alice).changeFeeRecipient(alice.address)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+      ).to.be.revertedWith(
+        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
+      );
     });
 
-    it("Owner can change fee recipient", async () => {
+    it("Admin can change fee recipient", async () => {
       await cryptonToken.changeFeeRecipient(alice.address);
       expect(await cryptonToken.feeRecipient()).to.be.equal(alice.address);
     });
@@ -270,17 +299,20 @@ describe("CryptonToken", function () {
     });
   });
 
+  // In our tests Bob has the BURNER_ROLE
   describe("Burning", function () {
-    it("Non owner should not be able to burn tokens", async () => {
+    it("Should not be able to burn tokens without BURNER_ROLE", async () => {
       const burnAmount = ethers.utils.parseUnits("10.0", decimals);
       await expect(
-        cryptonToken.connect(alice).burn(burnAmount)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+        cryptonToken.burn(alice.address, burnAmount)
+      ).to.be.revertedWith(
+        `AccessControl: account ${owner.address.toLowerCase()} is missing role ${burnerRole}`
+      );
     });
 
-    it("Owner should be able to burn tokens", async () => {
+    it("Burner should be able to burn tokens", async () => {
       const burnAmount = ethers.utils.parseUnits("10.0", decimals);
-      await expect(cryptonToken.burn(burnAmount))
+      await expect(cryptonToken.connect(bob).burn(owner.address, burnAmount))
         .to.emit(cryptonToken, "Transfer")
         .withArgs(owner.address, ethers.constants.AddressZero, burnAmount);
     });
@@ -289,7 +321,7 @@ describe("CryptonToken", function () {
       const initialSupply = await cryptonToken.totalSupply();
 
       const burnAmount = ethers.utils.parseUnits("10.0", decimals);
-      await cryptonToken.burn(burnAmount);
+      await cryptonToken.connect(bob).burn(owner.address, burnAmount);
 
       const currentSupply = await cryptonToken.totalSupply();
       expect(currentSupply).to.equal(initialSupply.sub(burnAmount));
@@ -300,23 +332,26 @@ describe("CryptonToken", function () {
 
     it("Can not burn above total supply", async () => {
       const burnAmount = ethers.utils.parseUnits("1050.0", decimals);
-      await expect(cryptonToken.burn(burnAmount)).to.be.revertedWith(
-        "Not enough tokens to burn"
-      );
+      await expect(
+        cryptonToken.connect(bob).burn(owner.address, burnAmount)
+      ).to.be.revertedWith("Not enough tokens to burn");
     });
   });
 
+  // In out tests Alice has the MINTER_ROLE
   describe("Minting", function () {
-    it("Non owner should not be able to mint tokens", async () => {
+    it("Should not be able to mint tokens without MINTER_ROLE", async () => {
       const mintAmount = ethers.utils.parseUnits("10.0", decimals);
       await expect(
-        cryptonToken.connect(alice).mint(alice.address, mintAmount)
-      ).to.be.revertedWith("Ownable: caller is not the owner");
+        cryptonToken.mint(alice.address, mintAmount)
+      ).to.be.revertedWith(
+        `AccessControl: account ${owner.address.toLowerCase()} is missing role ${minterRole}`
+      );
     });
 
-    it("Owner should be able to mint tokens", async () => {
+    it("Minter should be able to mint tokens", async () => {
       const mintAmount = ethers.utils.parseUnits("10.0", decimals);
-      await expect(cryptonToken.mint(owner.address, mintAmount))
+      await expect(cryptonToken.connect(alice).mint(owner.address, mintAmount))
         .to.emit(cryptonToken, "Transfer")
         .withArgs(ethers.constants.AddressZero, owner.address, mintAmount);
     });
@@ -325,7 +360,7 @@ describe("CryptonToken", function () {
       const initialSupply = await cryptonToken.totalSupply();
 
       const mintAmount = ethers.utils.parseUnits("10.0", decimals);
-      await cryptonToken.mint(owner.address, mintAmount);
+      await cryptonToken.connect(alice).mint(owner.address, mintAmount);
 
       const currentSupply = await cryptonToken.totalSupply();
       expect(currentSupply).to.equal(initialSupply.add(mintAmount));
