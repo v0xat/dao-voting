@@ -178,10 +178,15 @@ contract ERC20 is IERC20 {
     }
 
     /** @notice Transfers `amount` of tokens to specified address.
+     * @param from The address of spender.
      * @param to The address of recipient.
      * @param amount The amount of tokens to transfer.
      */
-    function _transfer(address from, address to, uint256 amount) private {
+    function _transfer(
+        address from,
+        address to,
+        uint256 amount
+    ) private {
         require(_balances[from] >= amount, "Not enough tokens");
 
         _beforeTokenTransfer(from, to, amount);
