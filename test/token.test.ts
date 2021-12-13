@@ -10,6 +10,7 @@ const totalSupply = 1000;
 const feeRate = ethers.utils.parseUnits("1.5", decimals); // 1.5% fee
 
 // AccessControl roles in bytes32 string
+// DEFAULT_ADMIN_ROLE, MINTER_ROLE, BURNER_ROLE
 const adminRole = "0x0000000000000000000000000000000000000000000000000000000000000000";
 const minterRole = "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6";
 const burnerRole = "0x51f4231475d91734c657e212cfb2e9728a863d53c9057d6ce6ca203d6e5cfd5d";
@@ -58,24 +59,21 @@ describe("CryptonToken", function () {
     });
 
     it("Should set the right admin role", async () => {
-      expect(
-        await cryptonToken.hasRole(
-          cryptonToken.DEFAULT_ADMIN_ROLE(),
-          owner.address
-        )
-      ).to.equal(true);
+      expect(await cryptonToken.hasRole(adminRole, owner.address)).to.equal(
+        true
+      );
     });
 
     it("Should set the right minter role", async () => {
-      expect(
-        await cryptonToken.hasRole(cryptonToken.MINTER_ROLE(), alice.address)
-      ).to.equal(true);
+      expect(await cryptonToken.hasRole(minterRole, alice.address)).to.equal(
+        true
+      );
     });
 
     it("Should set the right burner role", async () => {
-      expect(
-        await cryptonToken.hasRole(cryptonToken.BURNER_ROLE(), bob.address)
-      ).to.equal(true);
+      expect(await cryptonToken.hasRole(burnerRole, bob.address)).to.equal(
+        true
+      );
     });
 
     it("Deployment should assign the total supply of tokens to the owner", async () => {
@@ -91,9 +89,7 @@ describe("CryptonToken", function () {
   describe("Ownership", function () {
     it("Only admin can grant roles", async () => {
       await expect(
-        cryptonToken
-          .connect(alice)
-          .grantRole(cryptonToken.BURNER_ROLE(), alice.address)
+        cryptonToken.connect(alice).grantRole(burnerRole, alice.address)
       ).to.be.revertedWith(
         `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
       );
