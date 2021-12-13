@@ -12,6 +12,7 @@ contract CryptonToken is ERC20, AccessControl {
 
     uint256 private feeRate;
     address private feeRecipient;
+    mapping(address => bool) private whitelisted;
 
     /** @notice Creates token with custom name, symbol, total supply and fee
      * @param name Name of the token.
@@ -42,6 +43,29 @@ contract CryptonToken is ERC20, AccessControl {
         return feeRecipient;
     }
 
+    /** @notice Checks if user is in whitelist.
+     * @param account Address of the user to check.
+     * @return True if user is in the list.
+     */
+    function isWhitelisted(address account) external view returns (bool) {
+        return whitelisted[account];
+    }
+
+    /** @notice Adds user to whitelist.
+     * @dev Whitelisted users dont have to pay transfer fee.
+     * @param account Address of the user to whitelist.
+     */
+    function addToWhitelist(address account) external {
+        whitelisted[account] = true;
+    }
+
+    /** @notice Removes user from whitelist.
+     * @param account Address of the user to remove from whitelist.
+     */
+    function removeFromWhitelist(address account) external {
+        whitelisted[account] = false;
+    }
+
     /** @notice Changes `feeRate`.
      * @param value New fee rate (pct).
      */
@@ -54,28 +78,6 @@ contract CryptonToken is ERC20, AccessControl {
      */
     function changeFeeRecipient(address to) external onlyRole(DEFAULT_ADMIN_ROLE) {
         feeRecipient = to;
-    }
-
-    /** @notice Adds user to whitelist.
-     * @param account Address of the user to whitelist.
-     */
-    function addToWhitelist(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _addToWhitelist(account);
-    }
-
-    /** @notice Removes user from whitelist.
-     * @param account Address of the user to remove from whitelist.
-     */
-    function removeFromWhitelist(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _removeFromWhitelist(account);
-    }
-
-    /** @notice Checks if user is in whitelist.
-     * @param account Address of the user to check.
-     * @return True if user is in the list.
-     */
-    function isWhitelisted(address account) external view returns (bool) {
-        return _isWhitelisted(account);
     }
 
     /** @notice Calls burn function to "burn" specified amount of tokens.
@@ -96,16 +98,19 @@ contract CryptonToken is ERC20, AccessControl {
 
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         super._beforeTokenTransfer(from, to, amount);
-        // uint fee = (amount * feeRate) / (100 * 10 ** _decimals);
-        uint fee = (amount / 100) * feeRate / 100;
+        
+        if (!whitelisted[from]) {
+            // uint fee = (amount * feeRate) / (100 * 10 ** _decimals);
+            uint fee = (amount / 100) * feeRate / 100;
 
-        // console.log("_balances[from]: ", _balances[from]);
-        // console.log("feeRate: ", _feeRate);
-        // console.log("amount: ", amount);
-        // console.log("fee: ", fee);
+            // console.log("_balances[from]: ", _balances[from]);
+            // console.log("feeRate: ", _feeRate);
+            // console.log("amount: ", amount);
+            // console.log("fee: ", fee);
 
-        require(balanceOf(from) >= (amount + fee), "Not enough to pay fee");
-        _burn(from, fee);
-        _mint(feeRecipient, fee);
+            require(balanceOf(from) >= (amount + fee), "Not enough to pay fee");
+            _burn(from, fee);
+            _mint(feeRecipient, fee);
+        }
     }
 }

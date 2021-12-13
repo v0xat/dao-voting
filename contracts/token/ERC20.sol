@@ -11,7 +11,6 @@ contract ERC20 is IERC20 {
     string private _name;
     string private _symbol;
     uint8 private _decimals;
-    mapping(address => bool) whitelisted;
     mapping(address => uint256) private _balances;
     mapping(address => mapping (address => uint256)) private _allowances;
 
@@ -116,11 +115,6 @@ contract ERC20 is IERC20 {
         return true;
     }
 
-    /// @notice Returns true if `account` is in whitelist.
-    function _isWhitelisted(address account) internal view returns (bool) {
-        return whitelisted[account];
-    }
-
     /** @notice Burns `amount` of tokens.
      * @dev Decreases `_totalSupply` and `_balances[from]` 
      * on specified `amount`. Emits `Transfer` event.
@@ -154,21 +148,6 @@ contract ERC20 is IERC20 {
         return true;
     }
 
-    /** @notice Adds user to whitelist.
-     * @dev Whitelisted users dont have to pay transfer fee.
-     * @param account Address of the user to whitelist.
-     */
-    function _addToWhitelist(address account) internal {
-        whitelisted[account] = true;
-    }
-
-    /** @notice Removes user from whitelist.
-     * @param account Address of the user to remove from whitelist.
-     */
-    function _removeFromWhitelist(address account) internal {
-        whitelisted[account] = false;
-    }
-
     /** @notice Transfers `amount` of tokens to specified address.
      * @dev Charges transfer fee in `_beforeTokenTransfer` hook
      * if user is not in the whitelist.
@@ -183,9 +162,7 @@ contract ERC20 is IERC20 {
     ) private {
         require(_balances[from] >= amount, "Not enough tokens");
 
-        if (!_isWhitelisted(from)) {
-            _beforeTokenTransfer(from, to, amount);
-        }
+        _beforeTokenTransfer(from, to, amount);
 
         _balances[from] -= amount;
         _balances[to] += amount;
