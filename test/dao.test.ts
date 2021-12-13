@@ -202,7 +202,7 @@ describe("CryptonDAO", function () {
       );
     });
 
-    it("Should not be able to finish voting after 3 days from creation", async () => {
+    it("Should be able to finish voting after 3 days from creation", async () => {
       // Skipping 3 days voting period
       await ethers.provider.send("evm_increaseTime", [259200]);
 
