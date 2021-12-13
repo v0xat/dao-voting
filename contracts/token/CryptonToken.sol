@@ -41,14 +41,24 @@ contract CryptonToken is ERC20, AccessControl {
         _changeFeeRecipient(to);
     }
 
+    /** @notice Adds user to whitelist.
+     * @param account Address of the user to whitelist.
+     */
     function addToWhitelist(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _addToWhitelist(account);
     }
 
+    /** @notice Removes user from whitelist.
+     * @param account Address of the user to remove from whitelist.
+     */
     function removeFromWhitelist(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _removeFromWhitelist(account);
     }
 
+    /** @notice Checks if user is in whitelist.
+     * @param account Address of the user to check.
+     * @return True if user is in the list.
+     */
     function isWhitelisted(address account) external view returns (bool) {
         return _isWhitelisted(account);
     }

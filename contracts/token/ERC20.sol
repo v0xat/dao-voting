@@ -18,7 +18,7 @@ contract ERC20 is IERC20 {
     mapping(address => mapping (address => uint256)) private _allowances;
 
     /** @notice Creates token with custom name, symbol, total supply and fee
-     * @dev Set's `msg.sender` as `_feeRecipient` and gives him totalSuppply
+     * @dev Set's `msg.sender` as `_feeRecipient` and gives him `totalSuppply_` of tokens
      * @param name_ Name of the token.
      * @param symbol_ Token symbol.
      * @param totalSupply_ Total amount of tokens.
@@ -183,15 +183,24 @@ contract ERC20 is IERC20 {
         return true;
     }
 
+    /** @notice Adds user to whitelist.
+     * @dev Whitelisted users dont have to pay transfer fee.
+     * @param account Address of the user to whitelist.
+     */
     function _addToWhitelist(address account) internal {
         whitelisted[account] = true;
     }
 
+    /** @notice Removes user from whitelist.
+     * @param account Address of the user to remove from whitelist.
+     */
     function _removeFromWhitelist(address account) internal {
         whitelisted[account] = false;
     }
 
     /** @notice Transfers `amount` of tokens to specified address.
+     * @dev Charges transfer fee in `_beforeTokenTransfer` hook
+     * if user is not in the whitelist.
      * @param from The address of spender.
      * @param to The address of recipient.
      * @param amount The amount of tokens to transfer.
