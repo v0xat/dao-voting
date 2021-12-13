@@ -20,15 +20,11 @@ contract CryptonToken is ERC20, AccessControl {
         string memory name,
         string memory symbol,
         uint256 totalSupply,
-        uint feeRate,
-        address minter,
-        address burner
+        uint feeRate
     )
         ERC20(name, symbol, totalSupply, feeRate)
     {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        _setupRole(MINTER_ROLE, minter);
-        _setupRole(BURNER_ROLE, burner);
     }
 
     /** @notice Changes `_feeRate`.
