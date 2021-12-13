@@ -41,6 +41,14 @@ contract CryptonToken is ERC20, AccessControl {
         _changeFeeRecipient(to);
     }
 
+    function addToWhitelist(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _addToWhitelist(account);
+    }
+
+    function removeFromWhitelist(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _removeFromWhitelist(account);
+    }
+
     /** @notice Calls burn function to "burn" specified amount of tokens.
      * @param from The address to burn tokens on.
      * @param amount The amount of tokens to burn.

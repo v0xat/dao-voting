@@ -13,7 +13,7 @@ contract ERC20 is IERC20 {
     uint8 private _decimals;
     uint256 private _feeRate;
     address private _feeRecipient;
-
+    mapping(address => bool) whitelisted;
     mapping(address => uint256) private _balances;
     mapping(address => mapping (address => uint256)) private _allowances;
 
@@ -131,6 +131,11 @@ contract ERC20 is IERC20 {
         return true;
     }
 
+    /// @notice Returns true if `account` is in whitelist.
+    function isWhitelisted(address account) public view returns (bool) {
+        return whitelisted[account];
+    }
+
     /** @notice Changes `_feeRate`.
      * @param value New fee rate (pct).
      */
@@ -176,6 +181,14 @@ contract ERC20 is IERC20 {
         
         emit Transfer(address(0), to, amount);
         return true;
+    }
+
+    function _addToWhitelist(address account) internal {
+        whitelisted[account] = true;
+    }
+
+    function _removeFromWhitelist(address account) internal {
+        whitelisted[account] = false;
     }
 
     /** @notice Transfers `amount` of tokens to specified address.
