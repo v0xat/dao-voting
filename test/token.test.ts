@@ -1,6 +1,6 @@
 import { expect } from "chai";
 import { ethers } from "hardhat";
-import { Contract, ContractFactory } from "ethers";
+import { BigNumber, Contract, ContractFactory } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
 describe("CryptonToken", function () {
@@ -12,8 +12,9 @@ describe("CryptonToken", function () {
 
   const tokenName = "CryptonToken";
   const symbol = "CRPT";
-  const decimals = 18;
+  const decimals = 2;
   const totalSupply = 1000;
+  const feeRate = ethers.utils.parseUnits("1.5", decimals); // 1.5% fee
 
   before(async () => {
     [owner, alice, bob] = await ethers.getSigners();
@@ -21,30 +22,43 @@ describe("CryptonToken", function () {
   });
 
   beforeEach(async () => {
-    cryptonToken = await CryptonToken.deploy(tokenName, symbol, totalSupply);
+    cryptonToken = await CryptonToken.deploy(
+      tokenName,
+      symbol,
+      totalSupply,
+      feeRate
+    );
     await cryptonToken.deployed();
   });
 
   describe("Deployment", function () {
     it("Has a name", async () => {
-      expect(await cryptonToken.name()).to.equal(tokenName);
+      expect(await cryptonToken.name()).to.be.equal(tokenName);
     });
 
     it("Has a symbol", async () => {
-      expect(await cryptonToken.symbol()).to.equal(symbol);
+      expect(await cryptonToken.symbol()).to.be.equal(symbol);
     });
 
-    it("Has 18 decimals", async () => {
+    it(`Has ${decimals} decimals`, async () => {
       expect(await cryptonToken.decimals()).to.be.equal(decimals);
     });
 
-    it("Should set the right owner", async () => {
-      expect(await cryptonToken.owner()).to.equal(owner.address);
+    it(`Has ${feeRate}% fee rate`, async () => {
+      expect(await cryptonToken.feeRate()).to.be.equal(feeRate);
     });
 
-    it("Deployment should assign the total supply of CRPT to the owner", async () => {
+    it("Should set the right owner", async () => {
+      expect(await cryptonToken.owner()).to.be.equal(owner.address);
+    });
+
+    it("Deployment should assign the total supply of tokens to the owner", async () => {
       const ownerBalance = await cryptonToken.balanceOf(owner.address);
-      expect(await cryptonToken.totalSupply()).to.equal(ownerBalance);
+      expect(await cryptonToken.totalSupply()).to.be.equal(ownerBalance);
+    });
+
+    it("Should set owner as fee recipient", async () => {
+      expect(await cryptonToken.feeRecipient()).to.be.equal(owner.address);
     });
   });
 
@@ -61,26 +75,67 @@ describe("CryptonToken", function () {
     });
   });
 
-  describe("Transactions", function () {
-    it("Should transfer CRPT between accounts", async () => {
-      // Transfer 200 CRPT from owner to alice
-      await cryptonToken.transfer(
-        alice.address,
-        ethers.utils.parseUnits("200.0", decimals)
-      );
-      const aliceBalance = await cryptonToken.balanceOf(alice.address);
-      expect(aliceBalance).to.equal(ethers.utils.parseUnits("200.0", decimals));
-
-      // Transfer 100 CRPT from alice to bob
-      await cryptonToken
-        .connect(alice)
-        .transfer(bob.address, ethers.utils.parseUnits("100.0", decimals));
-      const bobBalance = await cryptonToken.balanceOf(bob.address);
-      expect(bobBalance).to.equal(ethers.utils.parseUnits("100.0", decimals));
+  describe("Fees", function () {
+    it("Non owner should not be able to change fee rate", async () => {
+      const newFee = ethers.utils.parseUnits("2", decimals);
+      await expect(
+        cryptonToken.connect(alice).changeFeeRate(newFee)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
     });
 
-    it("Should fail if sender doesn't have enough CRPT", async () => {
-      // Trying to send 10 CRPT from alice (0 CRPT) to owner (1000 CRPT)
+    it("Owner can change fee rate", async () => {
+      const newFee = ethers.utils.parseUnits("3.5", decimals);
+      await cryptonToken.changeFeeRate(newFee);
+      expect(await cryptonToken.feeRate()).to.be.equal(newFee);
+    });
+
+    it("Non owner should not be able to change fee recipient", async () => {
+      await expect(
+        cryptonToken.connect(alice).changeFeeRecipient(alice.address)
+      ).to.be.revertedWith("Ownable: caller is not the owner");
+    });
+
+    it("Owner can change fee recipient", async () => {
+      await cryptonToken.changeFeeRecipient(alice.address);
+      expect(await cryptonToken.feeRecipient()).to.be.equal(alice.address);
+    });
+
+    it("Transfer should charge fee from spender in favor of fee recipient", async () => {
+      // Transfer some tokens to Alice because owner is default fee recipient
+      await cryptonToken.transfer(
+        alice.address,
+        ethers.utils.parseUnits("20.0", decimals)
+      );
+
+      const amount: BigNumber = ethers.utils.parseUnits("10.0", decimals);
+      const fee: BigNumber = amount.div(100).mul(feeRate).div(100);
+      await expect(() =>
+        cryptonToken.connect(alice).transfer(bob.address, amount)
+      ).to.changeTokenBalances(
+        cryptonToken,
+        [alice, owner],
+        [-amount.add(fee), fee]
+      );
+    });
+  });
+
+  describe("Transfer", function () {
+    it("Should transfer tokens between accounts", async () => {
+      // Transfer 20 tokens from owner to Alice
+      let amount: BigNumber = ethers.utils.parseUnits("20.0", decimals);
+      await cryptonToken.transfer(alice.address, amount);
+      const aliceBalance = await cryptonToken.balanceOf(alice.address);
+      expect(aliceBalance).to.equal(amount);
+
+      // Transfer 10 tokens from Alice to Bob
+      amount = ethers.utils.parseUnits("10.0", decimals);
+      await cryptonToken.connect(alice).transfer(bob.address, amount);
+      const bobBalance = await cryptonToken.balanceOf(bob.address);
+      expect(bobBalance).to.equal(amount);
+    });
+
+    it("Should fail if sender doesn't have enough tokens", async () => {
+      // Trying to send 10 tokens from Alice (0 tokens) to owner (1000 tokens)
       await expect(
         cryptonToken
           .connect(alice)
@@ -94,11 +149,22 @@ describe("CryptonToken", function () {
       );
     });
 
+    it("Should fail if sender doesn't have enough tokens to pay fee", async () => {
+      // Trying to send all owner tokens (1000) to Alice
+      // Needs 15 more tokens to pay fee
+      await expect(
+        cryptonToken.transfer(
+          alice.address,
+          ethers.utils.parseUnits("1000.0", decimals)
+        )
+      ).to.be.revertedWith("Not enough to pay fee");
+    });
+
     it("Can not transfer above the amount", async () => {
       await expect(
         cryptonToken.transfer(
           alice.address,
-          ethers.utils.parseUnits("1001.0", decimals)
+          ethers.utils.parseUnits("1000.01", decimals)
         )
       ).to.be.revertedWith("Not enough tokens");
     });
@@ -116,28 +182,28 @@ describe("CryptonToken", function () {
     it("Should update balances after transfers", async function () {
       const initialOwnerBalance = await cryptonToken.balanceOf(owner.address);
 
-      // Transfer 200 CRPT from owner to alice
+      // Transfer 20 tokens from owner to Alice
       await cryptonToken.transfer(
         alice.address,
-        ethers.utils.parseUnits("200.0", decimals)
+        ethers.utils.parseUnits("20.0", decimals)
       );
-      // Transfer another 100 CRPT from owner to bob
+      // Transfer another 10 tokens from owner to Bob
       await cryptonToken.transfer(
         bob.address,
-        ethers.utils.parseUnits("100.0", decimals)
+        ethers.utils.parseUnits("10.0", decimals)
       );
 
       // Check balances
       const finalOwnerBalance = await cryptonToken.balanceOf(owner.address);
       expect(finalOwnerBalance).to.equal(
-        initialOwnerBalance.sub(ethers.utils.parseUnits("300.0", decimals))
+        initialOwnerBalance.sub(ethers.utils.parseUnits("30.0", decimals))
       );
 
       const aliceBalance = await cryptonToken.balanceOf(alice.address);
-      expect(aliceBalance).to.equal(ethers.utils.parseUnits("200.0", decimals));
+      expect(aliceBalance).to.equal(ethers.utils.parseUnits("20.0", decimals));
 
       const bobBalance = await cryptonToken.balanceOf(bob.address);
-      expect(bobBalance).to.equal(ethers.utils.parseUnits("100.0", decimals));
+      expect(bobBalance).to.equal(ethers.utils.parseUnits("10.0", decimals));
     });
   });
 
@@ -152,13 +218,13 @@ describe("CryptonToken", function () {
     it("Allowance should change after token approve", async () => {
       await cryptonToken.approve(
         alice.address,
-        ethers.utils.parseUnits("200.0", decimals)
+        ethers.utils.parseUnits("20.0", decimals)
       );
       const allowance = await cryptonToken.allowance(
         owner.address,
         alice.address
       );
-      expect(allowance).to.be.equal(ethers.utils.parseUnits("200.0", decimals));
+      expect(allowance).to.be.equal(ethers.utils.parseUnits("20.0", decimals));
     });
 
     it("TransferFrom should emit event", async () => {
@@ -185,17 +251,17 @@ describe("CryptonToken", function () {
     });
 
     it("Can not TransferFrom if owner does not have enough tokens", async () => {
-      // Approve alice to use 10 tokens
-      const amount = ethers.utils.parseUnits("10.0", decimals);
+      // Approve Alice to use 100 tokens
+      const amount = ethers.utils.parseUnits("100.0", decimals);
       await cryptonToken.approve(alice.address, amount);
 
-      // Send most of owner tokens to bob
+      // Send most of owner tokens to Bob
       await cryptonToken.transfer(
         bob.address,
-        ethers.utils.parseUnits("995.0", decimals)
+        ethers.utils.parseUnits("950.0", decimals)
       );
 
-      // Check that we can't transfer all amount (only 5 left)
+      // Check that Alice can't transfer all amount (only 50 left)
       await expect(
         cryptonToken
           .connect(alice)
