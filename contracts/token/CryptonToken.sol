@@ -42,10 +42,11 @@ contract CryptonToken is ERC20, AccessControl {
     }
 
     /** @notice Calls burn function to "burn" specified amount of tokens.
+     * @param from The address to burn tokens on.
      * @param amount The amount of tokens to burn.
      */
-    function burn(uint256 amount) external onlyRole(BURNER_ROLE) {
-        _burn(amount);
+    function burn(address from, uint256 amount) external onlyRole(BURNER_ROLE) {
+        _burn(from, amount);
     }
 
     /** @notice Calls mint function to "mint" specified amount of tokens.

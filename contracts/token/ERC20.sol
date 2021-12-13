@@ -146,19 +146,20 @@ contract ERC20 is IERC20 {
     }
 
     /** @notice Burns `amount` of tokens.
-     * @dev Decreases `_totalSupply` and `_balances[msg.sender]` 
+     * @dev Decreases `_totalSupply` and `_balances[from]` 
      * on specified `amount`. Emits `Transfer` event.
+     * @param from The address to burn tokens on.
      * @param amount The amount of tokens to burn.
      * @return True if burning was successfull.
      */
-    function _burn(uint256 amount) internal returns (bool) {
+    function _burn(address from, uint256 amount) internal returns (bool) {
         require(_totalSupply >= amount, "Not enough tokens to burn");
-        require(_balances[msg.sender] >= amount, "Not enough tokens to burn");
+        require(_balances[from] >= amount, "Not enough tokens to burn");
 
         _totalSupply -= amount;
-        _balances[msg.sender] -= amount;
+        _balances[from] -= amount;
         
-        emit Transfer(msg.sender, address(0), amount);
+        emit Transfer(from, address(0), amount);
         return true;
     }
 
