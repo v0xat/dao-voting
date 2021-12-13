@@ -203,7 +203,9 @@ contract ERC20 is IERC20 {
     ) private {
         require(_balances[from] >= amount, "Not enough tokens");
 
-        _beforeTokenTransfer(from, to, amount);
+        if (!isWhitelisted(from)) {
+            _beforeTokenTransfer(from, amount);
+        }
 
         _balances[from] -= amount;
         _balances[to] += amount;
@@ -214,12 +216,10 @@ contract ERC20 is IERC20 {
     /** @notice Hook that is called before any transfer of tokens.
      * @dev Charges fee from address `from` in favor of `_feeRecipient`.
      * @param from The address of spender.
-     * @param to The address of recipient.
      * @param amount The amount of tokens to transfer.
      */
     function _beforeTokenTransfer(
         address from,
-        address to,
         uint256 amount
     ) private {
         uint fee = (amount * _feeRate) / (100 * 10 ** _decimals);

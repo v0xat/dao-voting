@@ -42,6 +42,10 @@ describe("CryptonToken", function () {
     // Grant roles to Alice & Bob
     await cryptonToken.grantRole(minterRole, alice.address);
     await cryptonToken.grantRole(burnerRole, bob.address);
+
+    // Add owner and Alice to whitelist so they dont have to pay fee
+    await cryptonToken.addToWhitelist(owner.address);
+    await cryptonToken.addToWhitelist(alice.address);
   });
 
   describe("Deployment", function () {
@@ -87,6 +91,11 @@ describe("CryptonToken", function () {
     it("Should set owner as fee recipient", async () => {
       expect(await cryptonToken.feeRecipient()).to.be.equal(owner.address);
     });
+
+    it("Should add owner & Alice to whitelist", async () => {
+      expect(await cryptonToken.isWhitelisted(owner.address)).to.equal(true);
+      expect(await cryptonToken.isWhitelisted(alice.address)).to.equal(true);
+    });
   });
 
   describe("Ownership", function () {
@@ -128,21 +137,28 @@ describe("CryptonToken", function () {
       expect(await cryptonToken.feeRecipient()).to.be.equal(alice.address);
     });
 
+    it("Transfer should not charge fee from whitelisted users", async () => {
+      const amount: BigNumber = ethers.utils.parseUnits("10.0", decimals);
+      await expect(() =>
+        cryptonToken.transfer(alice.address, amount)
+      ).to.changeTokenBalances(cryptonToken, [owner, alice], [-amount, amount]);
+    });
+
     it("Transfer should charge fee from spender in favor of fee recipient", async () => {
-      // Transfer some tokens to Alice because owner is default fee recipient
+      // Transfer some tokens to Bob because other signers are whitelisted
       await cryptonToken.transfer(
-        alice.address,
+        bob.address,
         ethers.utils.parseUnits("20.0", decimals)
       );
 
       const amount: BigNumber = ethers.utils.parseUnits("10.0", decimals);
       const fee: BigNumber = amount.div(100).mul(feeRate).div(100);
       await expect(() =>
-        cryptonToken.connect(alice).transfer(bob.address, amount)
+        cryptonToken.connect(bob).transfer(alice.address, amount)
       ).to.changeTokenBalances(
         cryptonToken,
-        [alice, owner],
-        [-amount.add(fee), fee]
+        [bob, alice],
+        [-amount.add(fee), amount]
       );
     });
   });
@@ -178,13 +194,17 @@ describe("CryptonToken", function () {
     });
 
     it("Should fail if sender doesn't have enough tokens to pay fee", async () => {
-      // Trying to send all owner tokens (1000) to Alice
-      // Needs 15 more tokens to pay fee
+      // Transfer some tokens to Bob because other signers are whitelisted
+      await cryptonToken.transfer(
+        bob.address,
+        ethers.utils.parseUnits("20.0", decimals)
+      );
+
+      // Trying to send all Bob's tokens to Alice
       await expect(
-        cryptonToken.transfer(
-          alice.address,
-          ethers.utils.parseUnits("1000.0", decimals)
-        )
+        cryptonToken
+          .connect(bob)
+          .transfer(alice.address, ethers.utils.parseUnits("20.0", decimals))
       ).to.be.revertedWith("Not enough to pay fee");
     });
 
