@@ -3,6 +3,7 @@ import { ethers } from "hardhat";
 import { BigNumber, Contract, ContractFactory } from "ethers";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-with-address";
 
+// Token metadata
 const tokenName = "CryptonToken";
 const symbol = "CRPT";
 const decimals = 2;
@@ -11,7 +12,7 @@ const feeRate = ethers.utils.parseUnits("1.5", decimals); // 1.5% fee
 
 // AccessControl roles in bytes32 string
 // DEFAULT_ADMIN_ROLE, MINTER_ROLE, BURNER_ROLE
-const adminRole = "0x0000000000000000000000000000000000000000000000000000000000000000";
+const adminRole = ethers.constants.HashZero;
 const minterRole = "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6";
 const burnerRole = "0x51f4231475d91734c657e212cfb2e9728a863d53c9057d6ce6ca203d6e5cfd5d";
 
