@@ -132,7 +132,7 @@ contract ERC20 is IERC20 {
     }
 
     /// @notice Returns true if `account` is in whitelist.
-    function isWhitelisted(address account) public view returns (bool) {
+    function _isWhitelisted(address account) internal view returns (bool) {
         return whitelisted[account];
     }
 
@@ -203,7 +203,7 @@ contract ERC20 is IERC20 {
     ) private {
         require(_balances[from] >= amount, "Not enough tokens");
 
-        if (!isWhitelisted(from)) {
+        if (!_isWhitelisted(from)) {
             _beforeTokenTransfer(from, amount);
         }
 

@@ -49,6 +49,10 @@ contract CryptonToken is ERC20, AccessControl {
         _removeFromWhitelist(account);
     }
 
+    function isWhitelisted(address account) external view returns (bool) {
+        return _isWhitelisted(account);
+    }
+
     /** @notice Calls burn function to "burn" specified amount of tokens.
      * @param from The address to burn tokens on.
      * @param amount The amount of tokens to burn.
