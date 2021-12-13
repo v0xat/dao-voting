@@ -19,8 +19,10 @@ const burnerRole =
   "0x51f4231475d91734c657e212cfb2e9728a863d53c9057d6ce6ca203d6e5cfd5d";
 
 // Encode function
-const transferAbi = ["function transfer(address to, uint256 amount)"];
-const transferAbiInterface = new ethers.utils.Interface(transferAbi);
+const changeFeeRecipientAbi = ["function changeFeeRecipient(address to)"];
+const changeFeeRecipientInterface = new ethers.utils.Interface(
+  changeFeeRecipientAbi
+);
 
 // Sample proposal data
 const firstProp = 0;
@@ -122,10 +124,6 @@ describe("CryptonDAO", function () {
     });
   });
 
-  // const abi = ["function changeDaoName(string memory name)"];
-  // const iface = new ethers.utils.Interface(abi);
-  // const callData = iface.encodeFunctionData("changeDaoName", ["newname"]);
-
   describe("Voting", function () {
     beforeEach(async () => {
       // Adding some proposals
@@ -195,6 +193,19 @@ describe("CryptonDAO", function () {
       expect(propInfo.votesFor).to.be.equal(weight);
       expect(propInfo.votesAgainst).to.be.equal(ethers.constants.Zero);
     });
+  });
+
+  describe("Finish voting", function () {
+    beforeEach(async () => {
+      // Adding empty proposal
+      await cryptonDAO.addProposal(propDescr, alice.address, emptyCallData);
+      // Adding proposal with calldata
+      const callData = changeFeeRecipientInterface.encodeFunctionData(
+        "changeFeeRecipient",
+        [alice.address]
+      );
+      await cryptonDAO.addProposal(propDescr, alice.address, callData);
+    });
 
     it("Should not be able to finish voting before 3 days from creation", async () => {
       await expect(cryptonDAO.finishVoting(firstProp)).to.be.revertedWith(
@@ -202,13 +213,42 @@ describe("CryptonDAO", function () {
       );
     });
 
-    it("Should be able to finish voting after 3 days from creation", async () => {
+    it("Should be able to finish voting", async () => {
       // Skipping 3 days voting period
       await ethers.provider.send("evm_increaseTime", [259200]);
 
       await expect(cryptonDAO.finishVoting(firstProp))
         .to.emit(cryptonDAO, "VotingFinished")
-        .withArgs(firstProp);
+        .withArgs(firstProp, false);
+    });
+
+    it("Should not be able to successfully finish voting without reaching quorum", async () => {
+      // Voting for proposal
+      await cryptonDAO.vote(firstProp, support);
+
+      // Skipping 3 days voting period
+      await ethers.provider.send("evm_increaseTime", [259200]);
+
+      await expect(cryptonDAO.finishVoting(firstProp))
+        .to.emit(cryptonDAO, "VotingFinished")
+        .withArgs(firstProp, false);
+    });
+
+    it("Should be able to successfully finish voting and execute calldata", async () => {
+      // Voting for proposal
+      await cryptonDAO.vote(secondProp, support);
+      await cryptonDAO.connect(alice).vote(secondProp, support);
+      await cryptonDAO.connect(bob).vote(secondProp, support);
+
+      // Skipping 3 days voting period
+      await ethers.provider.send("evm_increaseTime", [259200]);
+
+      await expect(cryptonDAO.finishVoting(secondProp))
+        .to.emit(cryptonDAO, "VotingFinished")
+        .withArgs(secondProp, true);
+
+      // Token transfer fee recipient should have changed to Alice
+      expect(await daoToken.feeRecipient()).to.be.equal(alice.address);
     });
   });
 });

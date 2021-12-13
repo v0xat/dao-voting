@@ -26,7 +26,7 @@ contract CryptonDAO {
 
     event NewProposal(uint256 indexed propID, address indexed creator, string description, address indexed recipient);
     event Voted(uint256 indexed propID, address indexed voter, bool isSupporting);
-    event VotingFinished(uint256 id);
+    event VotingFinished(uint256 id, bool isSuccessful);
 
     constructor(address _tokenAddress) {
         tokenAddress = _tokenAddress;
@@ -119,11 +119,20 @@ contract CryptonDAO {
         delegates[proposalID][to] += token.balanceOf(msg.sender);
     }
 
-    function finishVoting(uint256 id) external onlyDAOMember {
-        require((proposals[id].createdAt + VOTING_PERIOD) <= block.timestamp, "Need to wait 3 days");
+    function finishVoting(uint256 propID) external onlyDAOMember {
+        require((proposals[propID].createdAt + VOTING_PERIOD) <= block.timestamp, "Need to wait 3 days");
 
+        // console.log("total votes: ", proposals[propID].votesFor + proposals[propID].votesAgainst);
+        // console.log("quorum: ", token.totalSupply() / 2);
+        // If reached 50% quorum, execute callData
+        if ((proposals[propID].votesFor + proposals[propID].votesAgainst) >= (token.totalSupply() / 2)) {
+            execute(proposals[propID].callData);
+            emit VotingFinished(propID, true);
+        } else {
+            emit VotingFinished(propID, false);
+        }
 
-        emit VotingFinished(id);
+        // returnTokens(propID);
     }
 
     function execute(bytes memory callData) private {
