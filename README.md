@@ -14,4 +14,6 @@ Try running some of the following tasks:
 
 ```shell
 npx hardhat coverage
+npx hardhat test test/dao.test.ts
+npx hardhat test test/token.test.ts
 ```
