@@ -5,33 +5,28 @@ pragma solidity ^0.8.10;
 import "./IERC20.sol";
 import "hardhat/console.sol";
 
-/** @title Implementation of the IERC20 interface  */
+/** @title Implementation of the IERC20 interface.  */
 contract ERC20 is IERC20 {
     uint256 private _totalSupply;
     string private _name;
     string private _symbol;
     uint8 private _decimals;
-    uint256 private _feeRate;
-    address private _feeRecipient;
     mapping(address => bool) whitelisted;
     mapping(address => uint256) private _balances;
     mapping(address => mapping (address => uint256)) private _allowances;
 
-    /** @notice Creates token with custom name, symbol, total supply and fee
+    /** @notice Creates token with custom name, symbol, total supply and fee.
      * @dev Set's `msg.sender` as `_feeRecipient` and gives him `totalSuppply_` of tokens
      * @param name_ Name of the token.
      * @param symbol_ Token symbol.
      * @param totalSupply_ Total amount of tokens.
-     * @param feeRate_ Transfer fee (pct).
      */
-    constructor(string memory name_, string memory symbol_, uint256 totalSupply_, uint256 feeRate_) {
+    constructor(string memory name_, string memory symbol_, uint256 totalSupply_) {
         _name = name_;
         _symbol = symbol_;
         _decimals = 2;
         _totalSupply = totalSupply_ * 10 ** _decimals;
         _balances[msg.sender] = _totalSupply;
-        _feeRate = feeRate_;
-        _feeRecipient = msg.sender;
     }
 
     /// @notice Returns token full name.
@@ -54,23 +49,13 @@ contract ERC20 is IERC20 {
         return _totalSupply;
     }
 
-    /// @notice Returns current transfer fee rate.
-    function feeRate() external view returns (uint) {
-        return _feeRate;
-    }
-
-    /// @notice Returns the address of transfer fee recipient.
-    function feeRecipient() external view returns (address) {
-        return _feeRecipient;
-    }
-
     /** @notice Returns amount of tokens owned by `account`.
      * @param account The address of the token holder.
      * @return balance The amount of tokens in uint.
      */
     function balanceOf(
         address account
-    ) external view returns (uint256 balance) {
+    ) public view returns (uint256 balance) {
         return _balances[account];
     }
 
@@ -136,20 +121,6 @@ contract ERC20 is IERC20 {
         return whitelisted[account];
     }
 
-    /** @notice Changes `_feeRate`.
-     * @param value New fee rate (pct).
-     */
-    function _changeFeeRate(uint256 value) internal {
-        _feeRate = value;
-    }
-
-    /** @notice Changes `_feeRecipient`.
-     * @param to Address of new recipient.
-     */
-    function _changeFeeRecipient(address to) internal {
-        _feeRecipient = to;
-    }
-
     /** @notice Burns `amount` of tokens.
      * @dev Decreases `_totalSupply` and `_balances[from]` 
      * on specified `amount`. Emits `Transfer` event.
@@ -213,7 +184,7 @@ contract ERC20 is IERC20 {
         require(_balances[from] >= amount, "Not enough tokens");
 
         if (!_isWhitelisted(from)) {
-            _beforeTokenTransfer(from, amount);
+            _beforeTokenTransfer(from, to, amount);
         }
 
         _balances[from] -= amount;
@@ -229,19 +200,7 @@ contract ERC20 is IERC20 {
      */
     function _beforeTokenTransfer(
         address from,
+        address to,
         uint256 amount
-    ) private {
-        uint fee = (amount * _feeRate) / (100 * 10 ** _decimals);
-        // uint fee = (amount / 100) * _feeRate / 100;
-
-        // console.log("_balances[from]: ", _balances[from]);
-        // console.log("feeRate: ", _feeRate);
-        // console.log("amount: ", amount);
-        // console.log("fee: ", fee);
-
-        require(_balances[from] >= (amount + fee), "Not enough to pay fee");
-        
-        _balances[from] -= fee;
-        _balances[_feeRecipient] += fee;
-    }
+    ) internal virtual {}
 }

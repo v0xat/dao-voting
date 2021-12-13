@@ -263,7 +263,7 @@ describe("CryptonDAO", function () {
         .withArgs(secondProp, true);
 
       // Token transfer fee recipient should have changed to Alice
-      expect(await daoToken.feeRecipient()).to.be.equal(alice.address);
+      expect(await daoToken.getFeeRecipient()).to.be.equal(alice.address);
     });
   });
 });

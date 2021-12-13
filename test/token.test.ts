@@ -62,7 +62,7 @@ describe("CryptonToken", function () {
     });
 
     it(`Has ${feeRate}% fee rate`, async () => {
-      expect(await cryptonToken.feeRate()).to.be.equal(feeRate);
+      expect(await cryptonToken.getFeeRate()).to.be.equal(feeRate);
     });
 
     it("Should set the right admin role", async () => {
@@ -89,7 +89,7 @@ describe("CryptonToken", function () {
     });
 
     it("Should set owner as fee recipient", async () => {
-      expect(await cryptonToken.feeRecipient()).to.be.equal(owner.address);
+      expect(await cryptonToken.getFeeRecipient()).to.be.equal(owner.address);
     });
 
     it("Should add owner & Alice to whitelist", async () => {
@@ -121,7 +121,7 @@ describe("CryptonToken", function () {
     it("Admin can change fee rate", async () => {
       const newFee = ethers.utils.parseUnits("3.5", decimals);
       await cryptonToken.changeFeeRate(newFee);
-      expect(await cryptonToken.feeRate()).to.be.equal(newFee);
+      expect(await cryptonToken.getFeeRate()).to.be.equal(newFee);
     });
 
     it("Should not be able to change fee recipient without DEFAULT_ADMIN_ROLE", async () => {
@@ -134,7 +134,7 @@ describe("CryptonToken", function () {
 
     it("Admin can change fee recipient", async () => {
       await cryptonToken.changeFeeRecipient(alice.address);
-      expect(await cryptonToken.feeRecipient()).to.be.equal(alice.address);
+      expect(await cryptonToken.getFeeRecipient()).to.be.equal(alice.address);
     });
 
     it("Transfer should not charge fee from whitelisted users", async () => {

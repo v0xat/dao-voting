@@ -10,35 +10,50 @@ contract CryptonToken is ERC20, AccessControl {
     bytes32 public constant MINTER_ROLE = keccak256("MINTER_ROLE");
     bytes32 public constant BURNER_ROLE  = keccak256("BURNER_ROLE ");
 
+    uint256 private feeRate;
+    address private feeRecipient;
+
     /** @notice Creates token with custom name, symbol, total supply and fee
      * @param name Name of the token.
      * @param symbol Token symbol.
      * @param totalSupply Total amount of tokens.
-     * @param feeRate Transfer fee (percent).
+     * @param feeRate_ Transfer fee (percent).
      */
     constructor(
         string memory name,
         string memory symbol,
         uint256 totalSupply,
-        uint feeRate
+        uint feeRate_
     )
-        ERC20(name, symbol, totalSupply, feeRate)
+        ERC20(name, symbol, totalSupply)
     {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        feeRate = feeRate_;
+        feeRecipient = msg.sender;
     }
 
-    /** @notice Changes `_feeRate`.
-     * @param value New fee rate (percent).
+    /// @notice Returns current transfer fee rate.
+    function getFeeRate() external view returns (uint) {
+        return feeRate;
+    }
+
+    /// @notice Returns the address of transfer fee recipient.
+    function getFeeRecipient() external view returns (address) {
+        return feeRecipient;
+    }
+
+    /** @notice Changes `feeRate`.
+     * @param value New fee rate (pct).
      */
-    function changeFeeRate(uint value) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _changeFeeRate(value);
+    function changeFeeRate(uint256 value) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        feeRate = value;
     }
 
-    /** @notice Changes `_feeRecipient`.
+    /** @notice Changes `feeRecipient`.
      * @param to Address of new recipient.
      */
     function changeFeeRecipient(address to) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        _changeFeeRecipient(to);
+        feeRecipient = to;
     }
 
     /** @notice Adds user to whitelist.
@@ -77,5 +92,20 @@ contract CryptonToken is ERC20, AccessControl {
      */
     function mint(address to, uint256 amount) external onlyRole(MINTER_ROLE) {
         _mint(to, amount);
+    }
+
+    function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
+        super._beforeTokenTransfer(from, to, amount);
+        // uint fee = (amount * feeRate) / (100 * 10 ** _decimals);
+        uint fee = (amount / 100) * feeRate / 100;
+
+        // console.log("_balances[from]: ", _balances[from]);
+        // console.log("feeRate: ", _feeRate);
+        // console.log("amount: ", amount);
+        // console.log("fee: ", fee);
+
+        require(balanceOf(from) >= (amount + fee), "Not enough to pay fee");
+        _burn(from, fee);
+        _mint(feeRecipient, fee);
     }
 }
