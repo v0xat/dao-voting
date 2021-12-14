@@ -163,6 +163,28 @@ describe("CryptonToken", function () {
     });
   });
 
+  describe("Freezed tokens", function () {
+    it("Only admin should be able to freeze tokens", async () => {
+      await cryptonToken.freezeTokens(owner.address);
+      await expect(
+        cryptonToken.connect(alice).freezeTokens(owner.address)
+      ).to.be.revertedWith(
+        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
+      );
+    });
+
+    it("Should not be able to transfer tokens if user in freezed list", async () => {
+      // Admin freezing his own address wow
+      await cryptonToken.freezeTokens(owner.address);
+      await expect(
+        cryptonToken.transfer(
+          alice.address,
+          ethers.utils.parseUnits("10.0", decimals)
+        )
+      ).to.be.revertedWith("Cant transfer freezed tokens");
+    });
+  });
+
   describe("Transfer", function () {
     it("Should transfer tokens between accounts", async () => {
       // Transfer 20 tokens from owner to Alice
