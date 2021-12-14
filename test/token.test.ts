@@ -108,6 +108,24 @@ describe("CryptonToken", function () {
     });
   });
 
+  describe("Whitelist", function () {
+    it("Only admin should be able to whitelist", async () => {
+      await expect(
+        cryptonToken.connect(alice).addToWhitelist(alice.address)
+      ).to.be.revertedWith(
+        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
+      );
+    });
+
+    it("Only admin should be able to remove from whitelist", async () => {
+      await expect(
+        cryptonToken.connect(alice).removeFromWhitelist(owner.address)
+      ).to.be.revertedWith(
+        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
+      );
+    });
+  });
+
   describe("Fees", function () {
     it("Should not be able to change fee rate without DEFAULT_ADMIN_ROLE", async () => {
       const newFee = ethers.utils.parseUnits("2", decimals);
