@@ -287,5 +287,36 @@ describe("CryptonDAO", function () {
       // Token transfer fee recipient should have changed to Alice
       expect(await daoToken.getFeeRecipient()).to.be.equal(alice.address);
     });
+
+    it("Tokens should be unfreezed and able to transfer after voting finished", async () => {
+      // Owners vote
+      await cryptonDAO.vote(firstProp, support);
+      // Bob delegate to Alice
+      await cryptonDAO.connect(bob).delegate(alice.address, firstProp);
+      // Bob's vote
+      await cryptonDAO.connect(alice).vote(firstProp, support);
+
+      // Check that tokens freezed
+      await expect(
+        daoToken.transfer(alice.address, tenTokens)
+      ).to.be.revertedWith("Cant transfer freezed tokens");
+
+      // Skipping 3 days and finishing voting
+      await ethers.provider.send("evm_increaseTime", [259200]);
+      await cryptonDAO.finishVoting(firstProp);
+
+      // Check Owner able to transfer and balances changed
+      let balanceBefore = await daoToken.balanceOf(alice.address);
+      await daoToken.transfer(alice.address, tenTokens);
+      let balanceAfter = await daoToken.balanceOf(alice.address);
+      expect(balanceAfter).to.equal(balanceBefore.add(tenTokens));
+
+      // Check Bob able to transfer and balances changed
+      balanceBefore = await daoToken.balanceOf(bob.address);
+      await daoToken.connect(bob).transfer(alice.address, tenTokens);
+      // Check that balances changed
+      balanceAfter = await daoToken.balanceOf(bob.address);
+      expect(balanceAfter).to.equal(balanceBefore.sub(tenTokens));
+    });
   });
 });

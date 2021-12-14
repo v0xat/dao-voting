@@ -187,7 +187,7 @@ contract CryptonDAO {
             emit VotingFinished(propID, false);
         }
 
-        // returnTokens(propID);
+        unfreezeTokens(propID);
     }
 
     /** @notice Executing proposal calldata if voting was successful
@@ -196,4 +196,14 @@ contract CryptonDAO {
     function execute(bytes memory callData) private {
         tokenAddress.call(callData);
     }
+
+    /** @notice Allows DAO members to transfer tokens.
+     * @param propID Proposal ID.
+     */
+    function unfreezeTokens(uint256 propID) private {
+        uint256 i;
+        for(i = 0; i < proposals[propID].votes.length; i++) {
+            token.unfreezeTokens(proposals[propID].votes[i].account);
         }
+    }
+}
