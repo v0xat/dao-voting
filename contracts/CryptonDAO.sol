@@ -128,6 +128,8 @@ contract CryptonDAO {
         proposals[proposalID].voters[msg.sender].voted = true;
         proposals[proposalID].voters[msg.sender].weight = weight;
 
+        token.freezeTokens(msg.sender);
+
         emit Voted(proposalID, msg.sender, isSupporting);
     }
 
@@ -150,6 +152,8 @@ contract CryptonDAO {
         proposals[proposalID].voters[msg.sender].voted = true;
         proposals[proposalID].voters[msg.sender].weight = token.balanceOf(msg.sender);
         delegates[proposalID][to] += token.balanceOf(msg.sender);
+        
+        token.freezeTokens(msg.sender);
     }
 
     /** @notice Finishing voting for proposal if conditions satisfied.

@@ -147,6 +147,16 @@ describe("CryptonDAO", function () {
         .withArgs(secondProp, owner.address, against);
     });
 
+    it("Voter should not be able to transfer tokens before end of vote", async () => {
+      await cryptonDAO.vote(firstProp, support);
+      await expect(
+        daoToken.transfer(
+          alice.address,
+          ethers.utils.parseUnits("10.0", decimals)
+        )
+      ).to.be.revertedWith("Cant transfer freezed tokens");
+    });
+
     it("Votes should be counted properly", async () => {
       await cryptonDAO.vote(firstProp, support);
 
@@ -166,6 +176,16 @@ describe("CryptonDAO", function () {
     it("Should be able to delegate votes on any proposal", async () => {
       await cryptonDAO.delegate(alice.address, firstProp);
       await cryptonDAO.delegate(alice.address, secondProp);
+    });
+
+    it("Delegate should not be able to transfer tokens before end of vote", async () => {
+      await cryptonDAO.delegate(alice.address, firstProp);
+      await expect(
+        daoToken.transfer(
+          bob.address,
+          ethers.utils.parseUnits("10.0", decimals)
+        )
+      ).to.be.revertedWith("Cant transfer freezed tokens");
     });
 
     it("Should not be able to delegate twice", async () => {
