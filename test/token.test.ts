@@ -163,11 +163,18 @@ describe("CryptonToken", function () {
     });
   });
 
-  describe("Freezed tokens", function () {
+  describe("Freeze", function () {
     it("Only admin should be able to freeze tokens", async () => {
-      await cryptonToken.freezeTokens(owner.address);
       await expect(
         cryptonToken.connect(alice).freezeTokens(owner.address)
+      ).to.be.revertedWith(
+        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
+      );
+    });
+
+    it("Only admin should be able to unfreeze tokens", async () => {
+      await expect(
+        cryptonToken.connect(alice).unfreezeTokens(owner.address)
       ).to.be.revertedWith(
         `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
       );
