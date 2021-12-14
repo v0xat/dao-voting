@@ -9,6 +9,7 @@ const symbol = "CRPT";
 const decimals = 2;
 const totalSupply = 1000;
 const feeRate = ethers.utils.parseUnits("1.5", decimals); // 1.5% fee
+const tenTokens = ethers.utils.parseUnits("10.0", decimals);
 
 // AccessControl roles in bytes32 string
 // DEFAULT_ADMIN_ROLE, MINTER_ROLE, BURNER_ROLE
@@ -150,10 +151,14 @@ describe("CryptonDAO", function () {
     it("Voter should not be able to transfer tokens before end of vote", async () => {
       await cryptonDAO.vote(firstProp, support);
       await expect(
-        daoToken.transfer(
-          alice.address,
-          ethers.utils.parseUnits("10.0", decimals)
-        )
+        daoToken.transfer(alice.address, tenTokens)
+      ).to.be.revertedWith("Cant transfer freezed tokens");
+    });
+
+    it("Delegate should not be able to transfer tokens before end of vote", async () => {
+      await cryptonDAO.delegate(alice.address, firstProp);
+      await expect(
+        daoToken.transfer(alice.address, tenTokens)
       ).to.be.revertedWith("Cant transfer freezed tokens");
     });
 
@@ -181,10 +186,7 @@ describe("CryptonDAO", function () {
     it("Delegate should not be able to transfer tokens before end of vote", async () => {
       await cryptonDAO.delegate(alice.address, firstProp);
       await expect(
-        daoToken.transfer(
-          bob.address,
-          ethers.utils.parseUnits("10.0", decimals)
-        )
+        daoToken.transfer(bob.address, tenTokens)
       ).to.be.revertedWith("Cant transfer freezed tokens");
     });
 
