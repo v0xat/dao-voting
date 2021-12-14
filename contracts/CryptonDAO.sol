@@ -192,17 +192,18 @@ contract CryptonDAO {
 
     /** @notice Executing proposal calldata if voting was successful
      * @param callData Calldata to execute.
+     * @return success True if call was successfull.
      */
-    function execute(bytes memory callData) private {
-        tokenAddress.call(callData);
+    function execute(bytes memory callData) private returns (bool) {
+        (bool success, bytes memory data) = tokenAddress.call(callData);
+        return success;
     }
 
     /** @notice Allows DAO members to transfer tokens.
      * @param propID Proposal ID.
      */
     function unfreezeTokens(uint256 propID) private {
-        uint256 i;
-        for(i = 0; i < proposals[propID].votes.length; i++) {
+        for(uint256 i = 0; i < proposals[propID].votes.length; i++) {
             token.unfreezeTokens(proposals[propID].votes[i].account);
         }
     }
