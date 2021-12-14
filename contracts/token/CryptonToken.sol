@@ -56,14 +56,14 @@ contract CryptonToken is ERC20, AccessControl {
      * @dev Whitelisted users dont have to pay transfer fee.
      * @param account Address of the user to whitelist.
      */
-    function addToWhitelist(address account) external {
+    function addToWhitelist(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
         whitelisted[account] = true;
     }
 
     /** @notice Removes user from whitelist.
      * @param account Address of the user to remove from whitelist.
      */
-    function removeFromWhitelist(address account) external {
+    function removeFromWhitelist(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
         whitelisted[account] = false;
     }
 
