@@ -13,6 +13,7 @@ contract CryptonToken is ERC20, AccessControl {
     uint256 private feeRate;
     address private feeRecipient;
     mapping(address => bool) private whitelisted;
+    mapping(address => bool) private freezed;
 
     /** @notice Creates token with custom name, symbol, total supply and fee
      * @param name Name of the token.
@@ -66,6 +67,22 @@ contract CryptonToken is ERC20, AccessControl {
         whitelisted[account] = false;
     }
 
+    /** @notice Feeze user tokens for the voting period.
+     * @dev Prevents user from transferring tokens.
+     * @param account Address of the user.
+     */
+    function freezeTokens(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        freezed[account] = true;
+    }
+
+    /** @notice Unfeeze user tokens.
+     * @dev Unblocks token transfer.
+     * @param account Address of the user.
+     */
+    function unFreezeTokens(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        freezed[account] = false;
+    }
+
     /** @notice Changes `feeRate`.
      * @param value New fee rate (pct).
      */
@@ -97,8 +114,9 @@ contract CryptonToken is ERC20, AccessControl {
     }
 
     /** @notice Hook that is called before any transfer of tokens.
-     * @dev Charges fee from address `from` in favor of `_feeRecipient`
-     * if he is not in the whitelist.
+     * @dev Charges fee from address `from` in favor of `_feeRecipient` if 
+     * he is not in the whitelist.
+     * Prevents transfer of tokens freezed during the voting period.
      *
      * @param from The address of spender.
      * @param to The address of recipient.
@@ -106,6 +124,8 @@ contract CryptonToken is ERC20, AccessControl {
      */
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         super._beforeTokenTransfer(from, to, amount);
+
+        require(!freezed[from], "Cant transfer freezed tokens");
         
         if (!whitelisted[from]) {
             // uint fee = (amount * feeRate) / (100 * 10 ** _decimals);
