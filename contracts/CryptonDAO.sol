@@ -7,9 +7,10 @@ import "./token/CryptonToken.sol";
 
 /** @title A simple DAO contract.  */
 contract CryptonDAO {
-    struct Voter {
+    struct Vote {
+        address account;
         uint256 weight;
-        bool voted;
+        address delegate;
     }
     struct Proposal {
         string description;
@@ -19,7 +20,8 @@ contract CryptonDAO {
         uint256 votesFor;
         uint256 votesAgainst;
         uint256 createdAt;
-        mapping(address => Voter) voters;
+        Vote[] votes;
+        mapping(address => bool) voted;
     }
 
     uint256 constant private VOTING_PERIOD = 3 days;
@@ -47,7 +49,7 @@ contract CryptonDAO {
     }
 
     modifier alreadyVoted(uint256 id, address account) {
-        require(!proposals[id].voters[account].voted, "Already voted");
+        require(!proposals[id].voted[account], "Already voted");
         _;
     }
 
@@ -125,8 +127,12 @@ contract CryptonDAO {
             proposals[proposalID].votesAgainst += weight;
         }
         
-        proposals[proposalID].voters[msg.sender].voted = true;
-        proposals[proposalID].voters[msg.sender].weight = weight;
+        proposals[proposalID].voted[msg.sender] = true;
+
+        Vote memory v;
+        v.weight = weight;
+        v.account = msg.sender;
+        proposals[proposalID].votes.push(v);
 
         token.freezeTokens(msg.sender);
 
@@ -149,8 +155,14 @@ contract CryptonDAO {
         require(to != msg.sender, "Can't self-delegate");
         require(proposals[proposalID].isOpen, "Voting ended");
 
-        proposals[proposalID].voters[msg.sender].voted = true;
-        proposals[proposalID].voters[msg.sender].weight = token.balanceOf(msg.sender);
+        proposals[proposalID].voted[msg.sender] = true;
+
+        Vote memory v;
+        v.weight = token.balanceOf(msg.sender);
+        v.account = msg.sender;
+        v.delegate = to;
+        proposals[proposalID].votes.push(v);
+        
         delegates[proposalID][to] += token.balanceOf(msg.sender);
         
         token.freezeTokens(msg.sender);
@@ -184,4 +196,4 @@ contract CryptonDAO {
     function execute(bytes memory callData) private {
         tokenAddress.call(callData);
     }
-}
+        }
