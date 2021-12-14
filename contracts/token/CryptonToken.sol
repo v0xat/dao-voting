@@ -79,7 +79,7 @@ contract CryptonToken is ERC20, AccessControl {
      * @dev Unblocks token transfer.
      * @param account Address of the user.
      */
-    function unFreezeTokens(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function unfreezeTokens(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
         freezed[account] = false;
     }
 
