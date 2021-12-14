@@ -67,7 +67,7 @@ contract CryptonToken is ERC20, AccessControl {
         whitelisted[account] = false;
     }
 
-    /** @notice Feeze user tokens for the voting period.
+    /** @notice Freeze user tokens for the voting period.
      * @dev Prevents user from transferring tokens.
      * @param account Address of the user.
      */
@@ -75,7 +75,7 @@ contract CryptonToken is ERC20, AccessControl {
         freezed[account] = true;
     }
 
-    /** @notice Unfeeze user tokens.
+    /** @notice Unfreeze user tokens.
      * @dev Unblocks token transfer.
      * @param account Address of the user.
      */
