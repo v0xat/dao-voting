@@ -96,6 +96,14 @@ contract CryptonToken is ERC20, AccessControl {
         _mint(to, amount);
     }
 
+    /** @notice Hook that is called before any transfer of tokens.
+     * @dev Charges fee from address `from` in favor of `_feeRecipient`
+     * if he is not in the whitelist.
+     *
+     * @param from The address of spender.
+     * @param to The address of recipient.
+     * @param amount The amount of tokens to transfer.
+     */
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         super._beforeTokenTransfer(from, to, amount);
         

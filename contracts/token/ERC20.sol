@@ -171,8 +171,8 @@ contract ERC20 is IERC20 {
     }
 
     /** @notice Hook that is called before any transfer of tokens.
-     * @dev Charges fee from address `from` in favor of `_feeRecipient`.
      * @param from The address of spender.
+     * @param to The address of recipient.
      * @param amount The amount of tokens to transfer.
      */
     function _beforeTokenTransfer(
