@@ -7,6 +7,10 @@ import "./token/CryptonToken.sol";
 
 /** @title A simple DAO contract.  */
 contract CryptonDAO {
+    struct Voter {
+        uint256 weight;
+        bool voted;
+    }
     struct Proposal {
         string description;
         // address recipient;
@@ -15,7 +19,7 @@ contract CryptonDAO {
         uint256 votesFor;
         uint256 votesAgainst;
         uint256 createdAt;
-        mapping(address => bool) voters;
+        mapping(address => Voter) voters;
     }
 
     uint256 constant private VOTING_PERIOD = 3 days;
@@ -42,8 +46,8 @@ contract CryptonDAO {
         _;
     }
 
-    modifier alreadyVoted(uint256 id, address voter) {
-        require(!proposals[id].voters[voter], "Already voted");
+    modifier alreadyVoted(uint256 id, address account) {
+        require(!proposals[id].voters[account].voted, "Already voted");
         _;
     }
 
@@ -121,8 +125,8 @@ contract CryptonDAO {
             proposals[proposalID].votesAgainst += weight;
         }
         
-        // token.transfer(address(this), token.balanceOf(msg.sender));
-        proposals[proposalID].voters[msg.sender] = true;
+        proposals[proposalID].voters[msg.sender].voted = true;
+        proposals[proposalID].voters[msg.sender].weight = weight;
 
         emit Voted(proposalID, msg.sender, isSupporting);
     }
@@ -143,7 +147,8 @@ contract CryptonDAO {
         require(to != msg.sender, "Can't self-delegate");
         require(proposals[proposalID].isOpen, "Voting ended");
 
-        proposals[proposalID].voters[msg.sender] = true;
+        proposals[proposalID].voters[msg.sender].voted = true;
+        proposals[proposalID].voters[msg.sender].weight = token.balanceOf(msg.sender);
         delegates[proposalID][to] += token.balanceOf(msg.sender);
     }
 
