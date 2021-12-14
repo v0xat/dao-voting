@@ -3,37 +3,18 @@
 pragma solidity ^0.8.10;
 
 import "hardhat/console.sol";
+import "./ICryptonDAO.sol";
 import "./token/CryptonToken.sol";
 
-/** @title A simple DAO contract.  */
-contract CryptonDAO {
-    struct Vote {
-        address account;
-        uint256 weight;
-        address delegate;
-    }
-    struct Proposal {
-        string description;
-        // address recipient;
-        bool isOpen;
-        bytes callData;
-        uint256 votesFor;
-        uint256 votesAgainst;
-        uint256 createdAt;
-        Vote[] votes;
-        mapping(address => bool) voted;
-    }
 
+/** @title A simple DAO contract.  */
+contract CryptonDAO is ICryptonDAO {
     uint256 constant private VOTING_PERIOD = 3 days;
     CryptonToken private token;
     address private tokenAddress;
     uint256 private numProposals;
     mapping(uint256 => Proposal) private proposals;
     mapping(uint256 => mapping(address => uint256)) private delegates;
-
-    event NewProposal(uint256 indexed propID, address indexed creator, string description, address indexed recipient);
-    event Voted(uint256 indexed propID, address indexed voter, bool isSupporting);
-    event VotingFinished(uint256 id, bool isSuccessful);
 
     /** @notice Creates DAO contract.
      * @param _tokenAddress The address of the token that wiil be used for voting.
