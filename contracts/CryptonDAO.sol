@@ -108,14 +108,7 @@ contract CryptonDAO is ICryptonDAO {
             proposals[proposalID].votesAgainst += weight;
         }
         
-        proposals[proposalID].voted[msg.sender] = true;
-
-        Vote memory v;
-        v.weight = weight;
-        v.account = msg.sender;
-        proposals[proposalID].votes.push(v);
-
-        token.freezeTokens(msg.sender);
+        addVote(proposalID, weight, msg.sender, address(0));
 
         emit Voted(proposalID, msg.sender, isSupporting);
     }
@@ -136,19 +129,11 @@ contract CryptonDAO is ICryptonDAO {
         require(to != msg.sender, "Can't self-delegate");
         require(proposals[proposalID].isOpen, "Voting ended");
 
-        proposals[proposalID].voted[msg.sender] = true;
-
         uint256 weight = token.balanceOf(msg.sender) + delegates[proposalID][msg.sender];
 
-        Vote memory v;
-        v.weight = weight;
-        v.account = msg.sender;
-        v.delegate = to;
-        proposals[proposalID].votes.push(v);
+        addVote(proposalID, weight, msg.sender, to);
         
         delegates[proposalID][to] += weight;
-        
-        token.freezeTokens(msg.sender);
     }
 
     /** @notice Finishing voting for proposal if conditions satisfied.
@@ -172,6 +157,24 @@ contract CryptonDAO is ICryptonDAO {
         }
 
         unfreezeTokens(propID);
+    }
+
+    /** @notice Registers a new vote on the proposal
+     * @param propID Proposal ID to vote on.
+     * @param weight Weight of the vote (token balance).
+     * @param from Address of the voter.
+     * @param delegate Delegate address.
+     */
+    function addVote(uint256 propID, uint256 weight, address from, address delegate) private {
+        proposals[propID].voted[from] = true;
+
+        Vote memory v;
+        v.weight = weight;
+        v.account = from;
+        v.delegate = delegate;
+        proposals[propID].votes.push(v);
+
+        token.freezeTokens(from);
     }
 
     /** @notice Executing proposal calldata if voting was successful
