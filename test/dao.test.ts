@@ -183,13 +183,6 @@ describe("CryptonDAO", function () {
       await cryptonDAO.delegate(alice.address, secondProp);
     });
 
-    it("Delegate should not be able to transfer tokens before end of vote", async () => {
-      await cryptonDAO.delegate(alice.address, firstProp);
-      await expect(
-        daoToken.transfer(bob.address, tenTokens)
-      ).to.be.revertedWith("Cant transfer freezed tokens");
-    });
-
     it("Should not be able to delegate twice", async () => {
       await cryptonDAO.delegate(alice.address, firstProp);
       await expect(
