@@ -160,12 +160,13 @@ contract CryptonDAO is ICryptonDAO {
         // console.log("total votes: ", proposals[propID].votesFor + proposals[propID].votesAgainst);
         // console.log("quorum: ", token.totalSupply() / 2);
 
-        // If reached 50% quorum and votesFor > votesAgainst, execute callData
         uint votesFor = proposals[propID].votesFor;
         uint votesAgainst = proposals[propID].votesAgainst;
-        if ((votesFor + votesAgainst) >= (token.totalSupply() / 2) && votesFor > votesAgainst) {
-            execute(proposals[propID].callData);
+        // If reached 50% quorum and votesFor > votesAgainst, execute callData
+        if ((votesFor + votesAgainst) >= (token.totalSupply() / 2)
+            && votesFor > votesAgainst) {
             emit VotingFinished(propID, true);
+            execute(proposals[propID].callData);
         } else {
             emit VotingFinished(propID, false);
         }
