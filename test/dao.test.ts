@@ -214,6 +214,21 @@ describe("CryptonDAO", function () {
         expect(propInfo.votesFor).to.be.equal(weight);
         expect(propInfo.votesAgainst).to.be.equal(ethers.constants.Zero);
       });
+
+      it("Should be able to delegate delegated votes", async () => {
+        await cryptonDAO.delegate(alice.address, firstProp);
+        await cryptonDAO.connect(alice).delegate(bob.address, firstProp);
+        await cryptonDAO.connect(bob).vote(firstProp, support);
+
+        const ownerWeight = await daoToken.balanceOf(owner.address);
+        const aliceWeight = await daoToken.balanceOf(alice.address);
+        const bobWeight = await daoToken.balanceOf(bob.address);
+        const totalWeight = ownerWeight.add(aliceWeight).add(bobWeight);
+
+        const propInfo = await cryptonDAO.getProposal(firstProp);
+        expect(propInfo.votesFor).to.be.equal(totalWeight);
+        expect(propInfo.votesAgainst).to.be.equal(ethers.constants.Zero);
+      });
     });
 
     describe("Voting finish", function () {

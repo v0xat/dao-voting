@@ -138,13 +138,15 @@ contract CryptonDAO is ICryptonDAO {
 
         proposals[proposalID].voted[msg.sender] = true;
 
+        uint256 weight = token.balanceOf(msg.sender) + delegates[proposalID][msg.sender];
+
         Vote memory v;
-        v.weight = token.balanceOf(msg.sender);
+        v.weight = weight;
         v.account = msg.sender;
         v.delegate = to;
         proposals[proposalID].votes.push(v);
         
-        delegates[proposalID][to] += token.balanceOf(msg.sender);
+        delegates[proposalID][to] += weight;
         
         token.freezeTokens(msg.sender);
     }
