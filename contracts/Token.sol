@@ -2,8 +2,9 @@
 
 pragma solidity ^0.8.10;
 
+import "hardhat/console.sol";
+import "@openzeppelin/contracts/token/ERC20/ERC20.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
-import "./ERC20.sol";
 
 /** @title Crypton token. */
 contract CryptonToken is ERC20, AccessControl {
@@ -12,26 +13,31 @@ contract CryptonToken is ERC20, AccessControl {
 
     uint256 private feeRate;
     address private feeRecipient;
-    mapping(address => bool) private whitelisted;
-    mapping(address => bool) private freezed;
+    address public dao;
 
-    /** @notice Creates token with custom name, symbol, total supply and fee
+    mapping(address => bool) private whitelisted;
+
+    /** @notice Creates token with custom name, symbol, and transfer fee
      * @param name Name of the token.
      * @param symbol Token symbol.
-     * @param totalSupply Total amount of tokens.
-     * @param feeRate_ Transfer fee (percent).
+     * @param _feeRate Transfer fee (percent).
      */
     constructor(
         string memory name,
         string memory symbol,
-        uint256 totalSupply,
-        uint feeRate_
+        uint256 _feeRate
     )
-        ERC20(name, symbol, totalSupply)
+        ERC20(name, symbol)
     {
         _setupRole(DEFAULT_ADMIN_ROLE, msg.sender);
-        feeRate = feeRate_;
+        feeRate = _feeRate;
         feeRecipient = msg.sender;
+    }
+
+    function initialize(address _dao) external onlyRole(DEFAULT_ADMIN_ROLE) {
+        _revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
+        dao = _dao;
+        _setupRole(DEFAULT_ADMIN_ROLE, _dao);
     }
 
     /// @notice Returns current transfer fee rate.
@@ -67,22 +73,6 @@ contract CryptonToken is ERC20, AccessControl {
         whitelisted[account] = false;
     }
 
-    /** @notice Freeze user tokens for the voting period.
-     * @dev Prevents user from transferring tokens.
-     * @param account Address of the user.
-     */
-    function freezeTokens(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        freezed[account] = true;
-    }
-
-    /** @notice Unfreeze user tokens.
-     * @dev Unblocks token transfer.
-     * @param account Address of the user.
-     */
-    function unfreezeTokens(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
-        freezed[account] = false;
-    }
-
     /** @notice Changes `feeRate`.
      * @param value New fee rate (pct).
      */
@@ -116,27 +106,23 @@ contract CryptonToken is ERC20, AccessControl {
     /** @notice Hook that is called before any transfer of tokens.
      * @dev Charges fee from address `from` in favor of `_feeRecipient` if 
      * he is not in the whitelist.
-     * Prevents transfer of tokens freezed during the voting period.
      *
      * @param from The address of spender.
      * @param to The address of recipient.
      * @param amount The amount of tokens to transfer.
      */
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
-        super._beforeTokenTransfer(from, to, amount);
+        if (!whitelisted[from] && from != address(0) && to != address(0)) {
+            uint256 fee = amount * feeRate / 100;
 
-        require(!freezed[from], "Cant transfer freezed tokens");
-        
-        if (!whitelisted[from]) {
-            // uint fee = (amount * feeRate) / (100 * 10 ** _decimals);
-            uint fee = (amount / 100) * feeRate / 100;
-
-            // console.log("_balances[from]: ", _balances[from]);
-            // console.log("feeRate: ", _feeRate);
+            //          ¯\_(ツ)_/¯
+            // console.log("balances[from]: ", balanceOf(from));
+            // console.log("feeRate: ", feeRate);
             // console.log("amount: ", amount);
             // console.log("fee: ", fee);
 
             require(balanceOf(from) >= (amount + fee), "Not enough to pay fee");
+
             _burn(from, fee);
             _mint(feeRecipient, fee);
         }
