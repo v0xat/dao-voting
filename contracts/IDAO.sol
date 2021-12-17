@@ -4,7 +4,7 @@ pragma solidity ^0.8.10;
 
 /** @notice Crypton DAO interface. */
 interface IDAO {
-    enum Decision { Ignore, Yes, No, Delegate }
+    enum Decision { NotParticipated, Yes, No, Delegate }
 
     struct Vote {
         uint256 weight;

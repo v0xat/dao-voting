@@ -77,7 +77,10 @@ contract CryptonDAO is IDAO {
         Proposal storage proposal = proposals[propID];
         require(balances[msg.sender] > 0, "Make a deposit to vote");
         require(proposal.createdAt + votingPeriod > block.timestamp, "Voting ended");
-        require(proposal.votes[msg.sender].decision == 0, "Already participated in proposal");
+        require(
+            proposal.votes[msg.sender].decision == uint8(Decision.NotParticipated),
+            "Already participated in proposal"
+        );
 
         countVote(
             propID,
@@ -95,7 +98,10 @@ contract CryptonDAO is IDAO {
      */
     function delegate(address to, uint256 propID) external {   
         Proposal storage proposal = proposals[propID];
-        require(proposal.votes[msg.sender].decision == 0, "Already participated in proposal");
+        require(
+            proposal.votes[msg.sender].decision == uint8(Decision.NotParticipated),
+            "Already participated in proposal"
+        );
         require(to != msg.sender, "Can't self-delegate");
         require(proposal.createdAt + votingPeriod > block.timestamp, "Voting ended");
 
@@ -177,7 +183,7 @@ contract CryptonDAO is IDAO {
     function getDecisionKeyByValue(Decision _decision) external pure returns (string memory) {
         require(uint8(_decision) <= 4, "Unknown type");
         
-        if (Decision.Ignore == _decision) return "Not participated";
+        if (Decision.NotParticipated == _decision) return "Not participated";
         if (Decision.Yes == _decision) return "Supported";
         if (Decision.No == _decision) return "Not supported";
         if (Decision.Delegate == _decision) return "Delegate";
