@@ -128,6 +128,11 @@ describe("CryptonDAO", function () {
       await cryptonDAO.addProposal(propDescr, daoToken.address, calldata);
       await cryptonDAO.addProposal(propDescr, daoToken.address, calldata);
       await cryptonDAO.addProposal(propDescr, daoToken.address, calldata);
+
+      await daoToken.approve(cryptonDAO.address, twentyTokens);
+      await cryptonDAO.deposit(twentyTokens);
+      await daoToken.connect(alice).approve(cryptonDAO.address, twentyTokens);
+      await cryptonDAO.connect(alice).deposit(twentyTokens);
     });
 
     it("Can get number of proposals", async () => {
@@ -135,8 +140,6 @@ describe("CryptonDAO", function () {
     });
 
     it("Can get deposit balance", async () => {
-      await daoToken.approve(cryptonDAO.address, twentyTokens);
-      await cryptonDAO.deposit(twentyTokens);
       expect(await cryptonDAO.balances(owner.address)).to.be.equal(
         twentyTokens
       );
@@ -151,12 +154,22 @@ describe("CryptonDAO", function () {
       expect(propInfo.votesAgainst).to.be.equal(ethers.constants.Zero);
     });
 
-    it("Can get vote data", async () => {
-      await daoToken.approve(cryptonDAO.address, twentyTokens);
-      await cryptonDAO.deposit(twentyTokens);
+    it("Can get regular vote", async () => {
       await cryptonDAO.vote(firstProp, supported);
       const vote = await cryptonDAO.getUserVote(firstProp, owner.address);
       expect(vote.weight).to.be.equal(twentyTokens);
+      expect(vote.decision).to.be.equal(1);
+      expect(vote.delegate).to.be.equal(ethers.constants.AddressZero);
+    });
+
+    it("Can get delegate vote", async () => {
+      // Delegate from owner to Alice
+      await cryptonDAO.delegate(alice.address, firstProp);
+      // Alice voting
+      await cryptonDAO.connect(alice).vote(firstProp, supported);
+      // The owner should be able to see the result of delegation
+      const vote = await cryptonDAO.getUserVote(firstProp, owner.address);
+      expect(vote.weight).to.be.equal(await cryptonDAO.balances(alice.address));
       expect(vote.decision).to.be.equal(1);
       expect(vote.delegate).to.be.equal(ethers.constants.AddressZero);
     });

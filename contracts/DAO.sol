@@ -137,11 +137,16 @@ contract CryptonDAO is IDAO {
     }
 
     /** @notice Returns data about user vote for specific proposal.
+     * @dev If user delegated his vote to someone else function will return delegate vote.
      * @param propID Proposal ID.
      * @param account The address to get the vote.
      */
-    function getUserVote(uint256 propID, address account) external view returns (Vote memory) {
-        return proposals[propID].votes[account];
+    function getUserVote(uint256 propID, address account) public view returns (Vote memory) {
+        if (proposals[propID].votes[account].decision == uint8(Decision.Delegate)) {
+            return getUserVote(propID, proposals[propID].votes[account].delegate);
+        } else {
+            return proposals[propID].votes[account];
+        }
     }
 
     /** @notice Returns data about multiple proposals in range

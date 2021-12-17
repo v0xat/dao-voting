@@ -63,12 +63,6 @@ interface IDAO {
      */
     function finishVoting(uint256 propID) external;
 
-    /** @notice Returns data about user vote for specific proposal.
-     * @param propID Proposal ID.
-     * @param account The address to get the vote.
-     */
-    function getUserVote(uint256 propID, address account) external view returns (Vote memory);
-
     /** @notice Returns data about multiple proposals in range
      * between `start` - `end`.
      * @param start Search start index.
