@@ -301,11 +301,11 @@ describe("CryptonDAO", function () {
         expect(propInfo.votesAgainst).to.be.equal(ethers.constants.Zero);
       });
 
-      it("Should not be able to vote without deposit", async () => {
-        await expect(
-          cryptonDAO.connect(addrs[0]).vote(firstProp, supported)
-        ).to.be.revertedWith("Make a deposit to vote");
-      });
+      // it("Should not be able to vote without deposit", async () => {
+      //   await expect(
+      //     cryptonDAO.connect(addrs[0]).vote(firstProp, supported)
+      //   ).to.be.revertedWith("Make a deposit to vote");
+      // });
 
       it("Should not be able to vote twice for one proposal", async () => {
         await cryptonDAO.vote(firstProp, supported);

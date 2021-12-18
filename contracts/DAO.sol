@@ -75,7 +75,6 @@ contract CryptonDAO is IDAO {
      */
     function vote(uint256 propID, bool decision) external {
         Proposal storage proposal = proposals[propID];
-        require(balances[msg.sender] > 0, "Make a deposit to vote");
         require(proposal.createdAt + votingPeriod > block.timestamp, "Voting ended");
         require(
             proposal.votes[msg.sender].decision == uint8(Decision.NotParticipated),
