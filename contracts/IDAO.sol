@@ -8,6 +8,7 @@ interface IDAO {
 
     struct Vote {
         uint256 weight;
+        uint256 delegateWeight;
         uint8 decision;
         address delegate;
     }
@@ -19,9 +20,6 @@ interface IDAO {
         address target;
         string description;
         bytes callData;
-        mapping(address => uint256) delegates;
-        mapping(address => Vote) votes;
-        mapping(address => mapping(address => uint256)) history;
     }
 
     /** @notice Deposits `amount` of tokens to contract.
@@ -63,14 +61,13 @@ interface IDAO {
      */
     function finishVoting(uint256 propID) external;
 
-    /** @notice Returns data about multiple proposals in range
-     * between `start` - `end`.
+    /** @notice Returns data about multiple proposals in range between `start` - `end`.
      * @param start Search start index.
      * @param end Search end index.
-     * @return
+     * @return props Array of objects with proposal data.
      */
     function getManyProposals(uint256 start, uint256 end) external view returns (
-        uint256[] memory, uint256[] memory, string[] memory, address[] memory
+        Proposal[] memory props
     );
 
     /** @notice Returns Decision enum keys as string.

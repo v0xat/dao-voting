@@ -38,6 +38,10 @@ contract CryptonToken is ERC20, AccessControl {
         feeRecipient = msg.sender;
     }
 
+    /** @notice Initializes token with DAO contract.
+     * @dev Sets DEFAULT_ADMIN_ROLE to DAO and revokes it from token owner.
+     * @param _dao The address of the DAO contract.
+     */
     function initialize(address _dao) external onlyRole(DEFAULT_ADMIN_ROLE) {
         _revokeRole(DEFAULT_ADMIN_ROLE, msg.sender);
         dao = _dao;

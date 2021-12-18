@@ -158,26 +158,47 @@ describe("CryptonDAO", function () {
       await cryptonDAO.vote(firstProp, supported);
       const vote = await cryptonDAO.getUserVote(firstProp, owner.address);
       expect(vote.weight).to.be.equal(twentyTokens);
+      expect(vote.delegateWeight).to.be.equal(ethers.constants.Zero);
       expect(vote.decision).to.be.equal(1);
       expect(vote.delegate).to.be.equal(ethers.constants.AddressZero);
     });
 
     it("Can get delegate vote", async () => {
       // Delegate from owner to Alice
+      const delegatorWeight = await cryptonDAO.balances(owner.address);
       await cryptonDAO.delegate(alice.address, firstProp);
       // Alice voting
+      const aliceWeight = await cryptonDAO.balances(alice.address);
       await cryptonDAO.connect(alice).vote(firstProp, supported);
       // The owner should be able to see the result of delegation
       const vote = await cryptonDAO.getUserVote(firstProp, owner.address);
-      expect(vote.weight).to.be.equal(await cryptonDAO.balances(alice.address));
+      expect(vote.weight).to.be.equal(aliceWeight);
+      expect(vote.delegateWeight).to.be.equal(delegatorWeight);
       expect(vote.decision).to.be.equal(1);
       expect(vote.delegate).to.be.equal(ethers.constants.AddressZero);
     });
 
-    // it("Can get many proposals in range", async () => {
-    //   const proposals = await cryptonDAO.getManyProposals(1, 4);
-    //   console.log(proposals);
-    // });
+    it("Can get list of delegators for user by proposal", async () => {
+      // Delegate from owner & Bob to Alice
+      await cryptonDAO.delegate(alice.address, firstProp);
+      await cryptonDAO.connect(bob).delegate(alice.address, firstProp);
+      const aliceDelegators = await cryptonDAO.getDelegatesList(
+        alice.address,
+        firstProp
+      );
+      expect(aliceDelegators[0]).to.be.equal(owner.address);
+      expect(aliceDelegators[1]).to.be.equal(bob.address);
+    });
+
+    it("Can get many proposals in range", async () => {
+      // Getting 4 proposals
+      const proposals = await cryptonDAO.getManyProposals(0, 3);
+      expect(proposals.length).to.be.equal(4);
+      expect(proposals[0].votesFor).to.be.equal(ethers.constants.Zero);
+      expect(proposals[1].votesAgainst).to.be.equal(ethers.constants.Zero);
+      expect(proposals[2].target).to.be.equal(daoToken.address);
+      expect(proposals[3].description).to.be.equal(propDescr);
+    });
 
     it("Can get decision key by value", async () => {
       expect(await cryptonDAO.getDecisionKeyByValue(0)).to.be.equal(
@@ -338,6 +359,12 @@ describe("CryptonDAO", function () {
           "Already participated in proposal"
         );
       });
+
+      // it("Should not be able to delegate without deposit", async () => {
+      //   await expect(
+      //     cryptonDAO.connect(addrs[0]).delegate(owner.address, firstProp)
+      //   ).to.be.revertedWith("Make a deposit to delegate");
+      // });
 
       it("Should not be able to delegate twice", async () => {
         await cryptonDAO.delegate(alice.address, firstProp);

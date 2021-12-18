@@ -15,9 +15,11 @@ contract CryptonDAO is IDAO {
     uint256 public minQuorum;
     address public token;
     mapping(address => uint256) public balances;
-    mapping(uint256 => Proposal) public proposals;
     mapping(address => uint256) public withdrawLock; // address => timestamp
-   
+    mapping(uint256 => Proposal) public proposals;
+    mapping(uint256 => mapping(address => Vote)) public votes; // propID => user => Vote
+    mapping(address => mapping(uint256 => address[])) public delegates;
+
     /** @notice Creates DAO contract.
      * @param _tokenAddress The address of the token that will be used for voting.
      * @param _minQuorum Minimum quorum pct.
@@ -77,7 +79,7 @@ contract CryptonDAO is IDAO {
         Proposal storage proposal = proposals[propID];
         require(proposal.createdAt + votingPeriod > block.timestamp, "Voting ended");
         require(
-            proposal.votes[msg.sender].decision == uint8(Decision.NotParticipated),
+            votes[propID][msg.sender].decision == uint8(Decision.NotParticipated),
             "Already participated in proposal"
         );
 
@@ -98,11 +100,12 @@ contract CryptonDAO is IDAO {
     function delegate(address to, uint256 propID) external {   
         Proposal storage proposal = proposals[propID];
         require(
-            proposal.votes[msg.sender].decision == uint8(Decision.NotParticipated),
+            votes[propID][msg.sender].decision == uint8(Decision.NotParticipated),
             "Already participated in proposal"
         );
         require(to != msg.sender, "Can't self-delegate");
         require(proposal.createdAt + votingPeriod > block.timestamp, "Voting ended");
+        // require(balances[msg.sender] > 0, "Make a deposit to delegate");
 
         countVote(propID, msg.sender, uint8(Decision.Delegate), to);
 
@@ -141,43 +144,54 @@ contract CryptonDAO is IDAO {
      * @param account The address to get the vote.
      */
     function getUserVote(uint256 propID, address account) public view returns (Vote memory) {
-        if (proposals[propID].votes[account].decision == uint8(Decision.Delegate)) {
-            return getUserVote(propID, proposals[propID].votes[account].delegate);
+        if (votes[propID][account].decision == uint8(Decision.Delegate)) {
+            return getUserVote(propID, votes[propID][account].delegate);
         } else {
-            return proposals[propID].votes[account];
+            return votes[propID][account];
         }
     }
 
-    /** @notice Returns data about multiple proposals in range
-     * between `start` - `end`.
+    /** @notice Returns array of users delegated their votes to `account` on specific proposal.
+     * @param account The address to get the vote.
+     * @param propID Proposal ID.
+     */
+    function getDelegatesList(address account, uint256 propID) external view returns (address[] memory) {
+        return delegates[account][propID];
+    }
+
+    /** @notice Returns data about multiple proposals in range between `start` - `end`.
      * @param start Search start index.
      * @param end Search end index.
-     * @return
+     * @return props Array of objects with proposal data.
      */
     function getManyProposals(uint256 start, uint256 end) external view returns (
-        uint256[] memory, uint256[] memory, string[] memory, address[] memory
+        Proposal[] memory props
     ) {
-        require(start >= 1 && end <= numProposals, "Invalid range");
+        require(start >= 0 && end < numProposals, "Invalid range");
 
-        uint256[]    memory votesFor = new uint[](end);
-        uint256[]    memory votesAgainst = new uint[](end);
-        string[]     memory description = new string[](end);
-        address[]    memory target = new address[](end);
-        for (uint i = start; i < end; i++) {
-            Proposal storage prop = proposals[i];
-            votesFor[i] = prop.votesFor;
-            votesAgainst[i] = prop.votesAgainst;
-            description[i] = prop.description;
-            target[i] = prop.target;
+        props = new Proposal[](end + 1);
+        
+        for (uint i = start; i <= end; i++) {
+            Proposal memory p = proposals[i];
+            props[i] = p;
         }
-        return (votesFor, votesAgainst, description, target);
 
-        // Storage arrays with nested mappings do not support .push(<arg>).
-        // Proposal[] storage props;
+        // uint256[] memory votesFor = new uint[](end);
+        // uint256[] memory votesAgainst = new uint[](end);
+        // uint256[] memory createdAt = new uint[](end);
+        // address[] memory target = new address[](end);
+        // string[]  memory description = new string[](end);
+        // bytes[]   memory callData = new bytes[](end);
         // for (uint i = start; i < end; i++) {
-        //     props.push(proposals[i]);
+        //     Proposal memory prop = proposals[i];
+        //     votesFor[i] = prop.votesFor;
+        //     votesAgainst[i] = prop.votesAgainst;
+        //     createdAt[i] = prop.createdAt;
+        //     target[i] = prop.target;
+        //     description[i] = prop.description;
+        //     callData[i] = prop.callData;
         // }
-        // return props;
+        // return (votesFor, votesAgainst, createdAt, target, description, callData);
     }
 
     /** @notice Returns Decision enum keys as string.
@@ -214,19 +228,18 @@ contract CryptonDAO is IDAO {
         uint256 weight = balances[from];
 
         if (decision == uint8(Decision.Yes)) {
-            proposal.votesFor += weight + proposal.delegates[from];
+            votes[propID][from].weight = weight;
+            proposal.votesFor += weight + votes[propID][from].delegateWeight;
         } else if (decision == uint8(Decision.No)) {
-            proposal.votesAgainst += weight + proposal.delegates[from];
+            votes[propID][from].weight = weight;
+            proposal.votesAgainst += weight + votes[propID][from].delegateWeight;
         } else {
-            proposal.delegates[delegate] += weight;
-            proposal.history[from][delegate] += weight;
+            delegates[delegate][propID].push(from);
+            votes[propID][from].delegate = delegate;
+            votes[propID][delegate].delegateWeight += weight;
         }
 
-        proposal.votes[from] = Vote({
-            weight: weight,
-            decision: decision,
-            delegate: delegate
-        });
+        votes[propID][from].decision = decision;
 
         withdrawLock[msg.sender] = (proposal.createdAt + votingPeriod) >
             withdrawLock[msg.sender] ?
