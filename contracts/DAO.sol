@@ -194,6 +194,15 @@ contract CryptonDAO is IDAO {
         if (Decision.Delegate == _decision) return "Delegate";
     }
 
+    /** @notice Changes voting rules such as min quorum and voting period time.
+     * @param _minQuorum New minimum quorum (pct).
+     * @param _votingPeriod New voting period (timestamp).
+     */
+    function changeVotingRules(uint256 _minQuorum, uint256 _votingPeriod) private {
+        votingPeriod = _votingPeriod;
+        minQuorum = _minQuorum;
+    }
+
     /** @notice Registers a vote or delegate for specific proposal.
      * @param propID Proposal ID.
      * @param from The address of voter.
