@@ -112,9 +112,16 @@ describe("CryptonToken", function () {
       );
     });
 
-    it("Removing from whitelist works", async () => {
-      await cryptonToken.removeFromWhitelist(alice.address);
-      expect(await cryptonToken.isWhitelisted(alice.address)).to.equal(false);
+    it("Adding to whitelist emits event", async () => {
+      await expect(cryptonToken.addToWhitelist(alice.address))
+        .to.emit(cryptonToken, "AddToWhitelist")
+        .withArgs(owner.address, alice.address);
+    });
+
+    it("Removing from whitelist emits event", async () => {
+      await expect(cryptonToken.removeFromWhitelist(alice.address))
+        .to.emit(cryptonToken, "RemoveFromWhitelist")
+        .withArgs(owner.address, alice.address);
     });
 
     it("Only admin should be able to remove from whitelist", async () => {
@@ -136,10 +143,17 @@ describe("CryptonToken", function () {
       );
     });
 
-    it("Admin can change fee rate", async () => {
+    it("Changing fee rate emits event", async () => {
       const newFee = ethers.utils.parseUnits("3.5", decimals);
-      await cryptonToken.changeFeeRate(newFee);
-      expect(await cryptonToken.getFeeRate()).to.be.equal(newFee);
+      await expect(cryptonToken.changeFeeRate(newFee))
+        .to.emit(cryptonToken, "ChangeFeeRate")
+        .withArgs(owner.address, newFee);
+    });
+
+    it("Changing fee recipient emits event", async () => {
+      await expect(cryptonToken.changeFeeRecipient(alice.address))
+        .to.emit(cryptonToken, "ChangeFeeRecipient")
+        .withArgs(owner.address, alice.address);
     });
 
     it("Should not be able to change fee recipient without DEFAULT_ADMIN_ROLE", async () => {

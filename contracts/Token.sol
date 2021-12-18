@@ -14,8 +14,12 @@ contract CryptonToken is ERC20, AccessControl {
     uint256 private feeRate;
     address private feeRecipient;
     address public dao;
-
     mapping(address => bool) private whitelisted;
+    
+    event AddToWhitelist(address indexed caller, address account);
+    event RemoveFromWhitelist(address indexed caller, address account);
+    event ChangeFeeRate(address indexed caller, uint256 feeRate);
+    event ChangeFeeRecipient(address indexed caller, address feeRecipient);
 
     /** @notice Creates token with custom name, symbol, and transfer fee
      * @param name Name of the token.
@@ -64,6 +68,7 @@ contract CryptonToken is ERC20, AccessControl {
      */
     function addToWhitelist(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
         whitelisted[account] = true;
+        emit AddToWhitelist(msg.sender, account);
     }
 
     /** @notice Removes user from whitelist.
@@ -71,6 +76,7 @@ contract CryptonToken is ERC20, AccessControl {
      */
     function removeFromWhitelist(address account) external onlyRole(DEFAULT_ADMIN_ROLE) {
         whitelisted[account] = false;
+        emit RemoveFromWhitelist(msg.sender, account);
     }
 
     /** @notice Changes `feeRate`.
@@ -78,6 +84,7 @@ contract CryptonToken is ERC20, AccessControl {
      */
     function changeFeeRate(uint256 value) external onlyRole(DEFAULT_ADMIN_ROLE) {
         feeRate = value;
+        emit ChangeFeeRate(msg.sender, value);
     }
 
     /** @notice Changes `feeRecipient`.
@@ -85,6 +92,7 @@ contract CryptonToken is ERC20, AccessControl {
      */
     function changeFeeRecipient(address to) external onlyRole(DEFAULT_ADMIN_ROLE) {
         feeRecipient = to;
+        emit ChangeFeeRecipient(msg.sender, to);
     }
 
     /** @notice Calls burn function to "burn" specified amount of tokens.
