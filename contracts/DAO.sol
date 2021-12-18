@@ -127,10 +127,10 @@ contract CryptonDAO is IDAO {
         // console.log("votesAgainst: ", votesAgainst);
         // console.log("total votes: ", (votesFor + votesAgainst));
         // console.log("total supply: ", IERC20(token).totalSupply());
-        // console.log("supply quorum: ", (IERC20(token).totalSupply() / 100) * minQuorum / 100);
+        // console.log("supply quorum: ", (IERC20(token).totalSupply() / 100) * minQuorum / 10000);
 
         // If reached quorum and votesFor > votesAgainst, execute callData and emit event
-        if ((votesFor + votesAgainst) >= (IERC20(token).totalSupply() * minQuorum / 100)
+        if ((votesFor + votesAgainst) >= (IERC20(token).totalSupply() * minQuorum / 10000)
             && votesFor > votesAgainst) {
             emit VotingFinished(propID, execute(proposals[propID].callData, proposals[propID].target));
         } else {
@@ -170,7 +170,7 @@ contract CryptonDAO is IDAO {
         require(start >= 0 && end < numProposals, "Invalid range");
 
         props = new Proposal[](end + 1);
-        
+
         for (uint i = start; i <= end; i++) {
             Proposal memory p = proposals[i];
             props[i] = p;

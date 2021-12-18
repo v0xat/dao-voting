@@ -32,8 +32,7 @@ const supported = true;
 const notSupproted = false;
 const delegated = 3;
 const propDescr = "description";
-// const minQuorum = ethers.utils.parseUnits("50.0", decimals); // 50% quorum
-const minQuorum = 50; // 50% quorum
+const minQuorum = 5000; // 50% quorum in basis points ?
 
 describe("CryptonDAO", function () {
   let CryptonDAO: ContractFactory, CryptonToken: ContractFactory;
