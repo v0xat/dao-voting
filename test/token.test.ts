@@ -7,7 +7,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-wit
 const tokenName = "CryptonToken";
 const symbol = "CRPT";
 const decimals = 18;
-const feeRate = 1; // 1% fee
+const feeRate = 150; // 1.5% fee in basis points ?
 const tenTokens = ethers.utils.parseUnits("10.0", decimals);
 const twentyTokens = ethers.utils.parseUnits("20.0", decimals);
 
@@ -178,7 +178,7 @@ describe("CryptonToken", function () {
 
     it("Transfer should charge fee from spender in favor of fee recipient", async () => {
       const initBobBalance = await cryptonToken.balanceOf(bob.address);
-      const fee: BigNumber = tenTokens.mul(feeRate).div(100);
+      const fee: BigNumber = tenTokens.mul(feeRate).div(10000);
       await cryptonToken.connect(bob).transfer(alice.address, tenTokens);
       const bobBalance = await cryptonToken.balanceOf(bob.address);
       expect(bobBalance).to.equal(initBobBalance.sub(tenTokens).sub(fee));

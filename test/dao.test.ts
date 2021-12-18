@@ -7,7 +7,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-wit
 const tokenName = "CryptonToken";
 const symbol = "CRPT";
 const decimals = 18;
-const feeRate = 1; // 1% fee
+const feeRate = 150; // 1.5% fee in basis points ?
 const tenTokens = ethers.utils.parseUnits("10.0", decimals);
 const twentyTokens = ethers.utils.parseUnits("20.0", decimals);
 

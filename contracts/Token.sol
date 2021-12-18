@@ -125,7 +125,7 @@ contract CryptonToken is ERC20, AccessControl {
      */
     function _beforeTokenTransfer(address from, address to, uint256 amount) internal virtual override {
         if (!whitelisted[from] && from != address(0) && to != address(0)) {
-            uint256 fee = amount * feeRate / 100;
+            uint256 fee = amount * feeRate / 10000;
 
             //          ¯\_(ツ)_/¯
             // console.log("balances[from]: ", balanceOf(from));
