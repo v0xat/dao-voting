@@ -14,16 +14,12 @@ const twentyTokens = ethers.utils.parseUnits("20.0", decimals);
 // AccessControl roles in bytes32 string
 // DEFAULT_ADMIN_ROLE, MINTER_ROLE, BURNER_ROLE
 const adminRole = ethers.constants.HashZero;
-const minterRole =
-  "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6";
-const burnerRole =
-  "0x51f4231475d91734c657e212cfb2e9728a863d53c9057d6ce6ca203d6e5cfd5d";
+const minterRole = "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6";
+const burnerRole = "0x51f4231475d91734c657e212cfb2e9728a863d53c9057d6ce6ca203d6e5cfd5d";
 
 // Encode function
 const changeFeeRecipientAbi = ["function changeFeeRecipient(address to)"];
-const changeFeeRecipientInterface = new ethers.utils.Interface(
-  changeFeeRecipientAbi
-);
+const changeFeeRecipientInterface = new ethers.utils.Interface(changeFeeRecipientAbi);
 
 // Sample DAO data
 const firstProp = 0;
@@ -35,14 +31,18 @@ const propDescr = "description";
 const minQuorum = 5000; // 50% quorum in basis points ?
 
 describe("CryptonDAO", function () {
-  let CryptonDAO: ContractFactory, CryptonToken: ContractFactory;
-  let owner: SignerWithAddress,
+  let CryptonDAO: ContractFactory,
+    CryptonToken: ContractFactory,
+    owner: SignerWithAddress,
     alice: SignerWithAddress,
-    bob: SignerWithAddress;
-  let addrs: SignerWithAddress[];
-  let cryptonDAO: Contract, daoToken: Contract;
-  let ownerBalance: BigNumber, aliceBalance: BigNumber, bobBalance: BigNumber;
-  let calldata: string;
+    bob: SignerWithAddress,
+    addrs: SignerWithAddress[],
+    cryptonDAO: Contract,
+    daoToken: Contract,
+    ownerBalance: BigNumber,
+    aliceBalance: BigNumber,
+    bobBalance: BigNumber,
+    calldata: string;
 
   before(async () => {
     [owner, alice, bob, ...addrs] = await ethers.getSigners();
@@ -50,10 +50,9 @@ describe("CryptonDAO", function () {
     CryptonDAO = await ethers.getContractFactory("CryptonDAO");
 
     // In tests we'll be proposing to change fee recipient to Alice
-    calldata = changeFeeRecipientInterface.encodeFunctionData(
-      "changeFeeRecipient",
-      [alice.address]
-    );
+    calldata = changeFeeRecipientInterface.encodeFunctionData("changeFeeRecipient", [
+      alice.address,
+    ]);
   });
 
   beforeEach(async () => {
@@ -86,7 +85,7 @@ describe("CryptonDAO", function () {
     bobBalance = await daoToken.balanceOf(bob.address);
 
     // Grants token DEFAULT_ADMIN_ROLE to DAO and revoke from token deployer (owner)
-    daoToken.initialize(cryptonDAO.address);
+    await daoToken.initialize(cryptonDAO.address);
   });
 
   describe("Deployment", function () {
@@ -95,9 +94,7 @@ describe("CryptonDAO", function () {
     });
 
     it("DAO contract should be the admin of the token", async () => {
-      expect(await daoToken.hasRole(adminRole, cryptonDAO.address)).to.equal(
-        true
-      );
+      expect(await daoToken.hasRole(adminRole, cryptonDAO.address)).to.equal(true);
     });
 
     it("Should set right DAO token address", async () => {
@@ -139,9 +136,7 @@ describe("CryptonDAO", function () {
     });
 
     it("Can get deposit balance", async () => {
-      expect(await cryptonDAO.balances(owner.address)).to.be.equal(
-        twentyTokens
-      );
+      expect(await cryptonDAO.balances(owner.address)).to.be.equal(twentyTokens);
     });
 
     it("Can get info about proposal", async () => {
@@ -181,10 +176,7 @@ describe("CryptonDAO", function () {
       // Delegate from owner & Bob to Alice
       await cryptonDAO.delegate(alice.address, firstProp);
       await cryptonDAO.connect(bob).delegate(alice.address, firstProp);
-      const aliceDelegators = await cryptonDAO.getDelegatesList(
-        alice.address,
-        firstProp
-      );
+      const aliceDelegators = await cryptonDAO.getDelegatesList(alice.address, firstProp);
       expect(aliceDelegators[0]).to.be.equal(owner.address);
       expect(aliceDelegators[1]).to.be.equal(bob.address);
     });
@@ -200,15 +192,9 @@ describe("CryptonDAO", function () {
     });
 
     it("Can get decision key by value", async () => {
-      expect(await cryptonDAO.getDecisionKeyByValue(0)).to.be.equal(
-        "Not participated"
-      );
-      expect(await cryptonDAO.getDecisionKeyByValue(1)).to.be.equal(
-        "Supported"
-      );
-      expect(await cryptonDAO.getDecisionKeyByValue(2)).to.be.equal(
-        "Not supported"
-      );
+      expect(await cryptonDAO.getDecisionKeyByValue(0)).to.be.equal("Not participated");
+      expect(await cryptonDAO.getDecisionKeyByValue(1)).to.be.equal("Supported");
+      expect(await cryptonDAO.getDecisionKeyByValue(2)).to.be.equal("Not supported");
       expect(await cryptonDAO.getDecisionKeyByValue(3)).to.be.equal("Delegate");
       await expect(cryptonDAO.getDecisionKeyByValue(123)).to.be.reverted;
     });
@@ -221,9 +207,7 @@ describe("CryptonDAO", function () {
         .withArgs(firstProp, owner.address, propDescr, alice.address);
 
       expect(
-        await cryptonDAO
-          .connect(addrs[0])
-          .addProposal(propDescr, alice.address, calldata)
+        await cryptonDAO.connect(addrs[0]).addProposal(propDescr, alice.address, calldata)
       )
         .to.emit(cryptonDAO, "NewProposal")
         .withArgs(secondProp, addrs[0].address, propDescr, alice.address);
@@ -242,9 +226,9 @@ describe("CryptonDAO", function () {
     });
 
     it("Can't deposit without tokens", async () => {
-      await expect(
-        cryptonDAO.connect(addrs[0]).deposit(tenTokens)
-      ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
+      await expect(cryptonDAO.connect(addrs[0]).deposit(tenTokens)).to.be.revertedWith(
+        "ERC20: transfer amount exceeds balance"
+      );
     });
 
     it("Can't make empty deposit", async () => {
@@ -367,15 +351,15 @@ describe("CryptonDAO", function () {
 
       it("Should not be able to delegate twice", async () => {
         await cryptonDAO.delegate(alice.address, firstProp);
-        await expect(
-          cryptonDAO.delegate(bob.address, firstProp)
-        ).to.be.revertedWith("Already participated in proposal");
+        await expect(cryptonDAO.delegate(bob.address, firstProp)).to.be.revertedWith(
+          "Already participated in proposal"
+        );
       });
 
       it("Should not be able to self-delegate", async () => {
-        await expect(
-          cryptonDAO.delegate(owner.address, firstProp)
-        ).to.be.revertedWith("Can't self-delegate");
+        await expect(cryptonDAO.delegate(owner.address, firstProp)).to.be.revertedWith(
+          "Can't self-delegate"
+        );
       });
 
       it("Should properly count delegated votes", async () => {

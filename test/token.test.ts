@@ -14,17 +14,15 @@ const twentyTokens = ethers.utils.parseUnits("20.0", decimals);
 // AccessControl roles in bytes32 string
 // DEFAULT_ADMIN_ROLE, MINTER_ROLE, BURNER_ROLE
 const adminRole = ethers.constants.HashZero;
-const minterRole =
-  "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6";
-const burnerRole =
-  "0x51f4231475d91734c657e212cfb2e9728a863d53c9057d6ce6ca203d6e5cfd5d";
+const minterRole = "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6";
+const burnerRole = "0x51f4231475d91734c657e212cfb2e9728a863d53c9057d6ce6ca203d6e5cfd5d";
 
 describe("CryptonToken", function () {
-  let CryptonToken: ContractFactory;
-  let owner: SignerWithAddress,
+  let CryptonToken: ContractFactory,
+    owner: SignerWithAddress,
     alice: SignerWithAddress,
-    bob: SignerWithAddress;
-  let cryptonToken: Contract;
+    bob: SignerWithAddress,
+    cryptonToken: Contract;
 
   before(async () => {
     [owner, alice, bob] = await ethers.getSigners();
@@ -66,21 +64,15 @@ describe("CryptonToken", function () {
     });
 
     it("Should set the right admin role", async () => {
-      expect(await cryptonToken.hasRole(adminRole, owner.address)).to.equal(
-        true
-      );
+      expect(await cryptonToken.hasRole(adminRole, owner.address)).to.equal(true);
     });
 
     it("Should set the right minter role", async () => {
-      expect(await cryptonToken.hasRole(minterRole, alice.address)).to.equal(
-        true
-      );
+      expect(await cryptonToken.hasRole(minterRole, alice.address)).to.equal(true);
     });
 
     it("Should set the right burner role", async () => {
-      expect(await cryptonToken.hasRole(burnerRole, bob.address)).to.equal(
-        true
-      );
+      expect(await cryptonToken.hasRole(burnerRole, bob.address)).to.equal(true);
     });
 
     it("Should set owner as fee recipient", async () => {
@@ -136,9 +128,7 @@ describe("CryptonToken", function () {
   describe("Fees", function () {
     it("Should not be able to change fee rate without DEFAULT_ADMIN_ROLE", async () => {
       const newFee = 2;
-      await expect(
-        cryptonToken.connect(alice).changeFeeRate(newFee)
-      ).to.be.revertedWith(
+      await expect(cryptonToken.connect(alice).changeFeeRate(newFee)).to.be.revertedWith(
         `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
       );
     });
@@ -210,17 +200,12 @@ describe("CryptonToken", function () {
 
       // Owner balance shouldn't have changed
       const ownerBalance = await cryptonToken.balanceOf(owner.address);
-      expect(await cryptonToken.balanceOf(owner.address)).to.equal(
-        ownerBalance
-      );
+      expect(await cryptonToken.balanceOf(owner.address)).to.equal(ownerBalance);
     });
 
     it("Can not transfer above the amount", async () => {
       await expect(
-        cryptonToken.transfer(
-          alice.address,
-          ethers.utils.parseUnits("1000.01", decimals)
-        )
+        cryptonToken.transfer(alice.address, ethers.utils.parseUnits("1000.01", decimals))
       ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
     });
 
@@ -246,9 +231,7 @@ describe("CryptonToken", function () {
 
       // Check balances
       const finalOwnerBalance = await cryptonToken.balanceOf(owner.address);
-      expect(finalOwnerBalance).to.be.equal(
-        initialOwnerBalance.sub(twentyTokens)
-      );
+      expect(finalOwnerBalance).to.be.equal(initialOwnerBalance.sub(twentyTokens));
 
       const aliceBalance = await cryptonToken.balanceOf(alice.address);
       expect(aliceBalance).to.be.equal(initialAliceBalance.add(tenTokens));
@@ -268,10 +251,7 @@ describe("CryptonToken", function () {
 
     it("Allowance should change after token approve", async () => {
       await cryptonToken.approve(alice.address, tenTokens);
-      const allowance = await cryptonToken.allowance(
-        owner.address,
-        alice.address
-      );
+      const allowance = await cryptonToken.allowance(owner.address, alice.address);
       expect(allowance).to.be.equal(tenTokens);
     });
 
@@ -279,9 +259,7 @@ describe("CryptonToken", function () {
       const amount = tenTokens;
       await cryptonToken.approve(alice.address, amount);
       await expect(
-        cryptonToken
-          .connect(alice)
-          .transferFrom(owner.address, alice.address, amount)
+        cryptonToken.connect(alice).transferFrom(owner.address, alice.address, amount)
       )
         .to.emit(cryptonToken, "Transfer")
         .withArgs(owner.address, alice.address, amount);
@@ -310,9 +288,7 @@ describe("CryptonToken", function () {
 
       // Check that Alice can't transfer all amount (only 5 left)
       await expect(
-        cryptonToken
-          .connect(alice)
-          .transferFrom(owner.address, alice.address, tenTokens)
+        cryptonToken.connect(alice).transferFrom(owner.address, alice.address, tenTokens)
       ).to.be.revertedWith("ERC20: transfer amount exceeds balance");
     });
   });
@@ -321,9 +297,7 @@ describe("CryptonToken", function () {
   describe("Burning", function () {
     it("Should not be able to burn tokens without BURNER_ROLE", async () => {
       const burnAmount = tenTokens;
-      await expect(
-        cryptonToken.burn(alice.address, burnAmount)
-      ).to.be.revertedWith(
+      await expect(cryptonToken.burn(alice.address, burnAmount)).to.be.revertedWith(
         `AccessControl: account ${owner.address.toLowerCase()} is missing role ${burnerRole}`
       );
     });
@@ -361,9 +335,7 @@ describe("CryptonToken", function () {
   describe("Minting", function () {
     it("Should not be able to mint tokens without MINTER_ROLE", async () => {
       const mintAmount = tenTokens;
-      await expect(
-        cryptonToken.mint(alice.address, mintAmount)
-      ).to.be.revertedWith(
+      await expect(cryptonToken.mint(alice.address, mintAmount)).to.be.revertedWith(
         `AccessControl: account ${owner.address.toLowerCase()} is missing role ${minterRole}`
       );
     });
