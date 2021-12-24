@@ -20,15 +20,22 @@ const burnerRole = "0x51f4231475d91734c657e212cfb2e9728a863d53c9057d6ce6ca203d6e
 // Encode function
 const changeFeeRecipientAbi = ["function changeFeeRecipient(address to)"];
 const changeFeeRecipientInterface = new ethers.utils.Interface(changeFeeRecipientAbi);
+const changeVotingRulesAbi = [
+  "function changeVotingRules(uint256 _minQuorum, uint256 _votingPeriod)",
+];
+const changeVotingRulesInterface = new ethers.utils.Interface(changeVotingRulesAbi);
 
 // Sample DAO data
 const firstProp = 0;
 const secondProp = 1;
 const supported = true;
-const notSupproted = false;
+const notSupported = false;
 const delegated = 3;
 const propDescr = "description";
 const minQuorum = 5000; // 50% quorum in basis points ?
+const votingPeriod = 259200; // 3 days
+const newMinQuorum = 7000; // 70% quorum
+const newVotingPeriod = 86400; // 1 day
 
 describe("CryptonDAO", function () {
   let CryptonDAO: ContractFactory,
@@ -93,10 +100,6 @@ describe("CryptonDAO", function () {
       expect(await daoToken.dao()).to.be.equal(cryptonDAO.address);
     });
 
-    it("DAO contract should be the admin of the token", async () => {
-      expect(await daoToken.hasRole(adminRole, cryptonDAO.address)).to.equal(true);
-    });
-
     it("Should set right DAO token address", async () => {
       expect(await cryptonDAO.token()).to.be.equal(daoToken.address);
     });
@@ -107,7 +110,7 @@ describe("CryptonDAO", function () {
 
     it("Should set right voting period", async () => {
       // 3 days in seconds
-      expect(await cryptonDAO.votingPeriod()).to.be.equal(259200);
+      expect(await cryptonDAO.votingPeriod()).to.be.equal(votingPeriod);
     });
 
     it("DAO, owner, Alice & Bob should be in whitelist", async () => {
@@ -115,6 +118,25 @@ describe("CryptonDAO", function () {
       expect(await daoToken.isWhitelisted(owner.address)).to.equal(true);
       expect(await daoToken.isWhitelisted(alice.address)).to.equal(true);
       expect(await daoToken.isWhitelisted(bob.address)).to.equal(true);
+    });
+  });
+
+  describe("Access Control", function () {
+    it("DAO contract should be the admin of the token", async () => {
+      expect(await daoToken.hasRole(adminRole, cryptonDAO.address)).to.equal(true);
+    });
+
+    it("DAO contract should be self-admin", async () => {
+      expect(await cryptonDAO.hasRole(adminRole, cryptonDAO.address)).to.equal(true);
+    });
+
+    it("No one can change voting rules", async () => {
+      await expect(cryptonDAO.changeVotingRules(0, 0)).to.be.revertedWith(
+        `AccessControl: account ${owner.address.toLowerCase()} is missing role ${adminRole}`
+      );
+      await expect(cryptonDAO.connect(alice).changeVotingRules(0, 0)).to.be.revertedWith(
+        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
+      );
     });
   });
 
@@ -292,9 +314,9 @@ describe("CryptonDAO", function () {
           .to.emit(cryptonDAO, "Voted")
           .withArgs(firstProp, owner.address, supported);
 
-        expect(await cryptonDAO.vote(secondProp, notSupproted))
+        expect(await cryptonDAO.vote(secondProp, notSupported))
           .to.emit(cryptonDAO, "Voted")
-          .withArgs(secondProp, owner.address, notSupproted);
+          .withArgs(secondProp, owner.address, notSupported);
       });
 
       it("Votes should be counted properly", async () => {
@@ -319,7 +341,7 @@ describe("CryptonDAO", function () {
       });
 
       it("Should not be able to vote after 3 days", async () => {
-        await ethers.provider.send("evm_increaseTime", [259200]);
+        await ethers.provider.send("evm_increaseTime", [votingPeriod]);
         await expect(cryptonDAO.vote(firstProp, supported)).to.be.revertedWith(
           "Voting ended"
         );
@@ -388,73 +410,14 @@ describe("CryptonDAO", function () {
       });
     });
 
-    describe("Finish", function () {
-      it("Should not be able to finish voting before 3 days from creation", async () => {
-        await expect(cryptonDAO.finishVoting(firstProp)).to.be.revertedWith(
-          "Need to wait 3 days"
-        );
-      });
-
+    describe("Finish voting", function () {
       it("Any user can finish voting", async () => {
         // Skipping 3 days voting period
-        await ethers.provider.send("evm_increaseTime", [259200]);
+        await ethers.provider.send("evm_increaseTime", [votingPeriod]);
 
         await expect(cryptonDAO.connect(addrs[0]).finishVoting(firstProp))
           .to.emit(cryptonDAO, "VotingFinished")
           .withArgs(firstProp, false);
-      });
-
-      it("Should not be able to successfully finish voting without reaching quorum", async () => {
-        await cryptonDAO.vote(firstProp, supported);
-
-        // Skipping 3 days voting period
-        await ethers.provider.send("evm_increaseTime", [259200]);
-
-        await expect(cryptonDAO.finishVoting(firstProp))
-          .to.emit(cryptonDAO, "VotingFinished")
-          .withArgs(firstProp, false);
-      });
-
-      it("Should not be able to successfully finish voting if votesFor < votesAgainst", async () => {
-        // Voting for proposal
-        await cryptonDAO.vote(firstProp, supported);
-        // Voting against
-        await cryptonDAO.connect(alice).vote(firstProp, notSupproted);
-        await cryptonDAO.connect(bob).vote(firstProp, notSupproted);
-
-        await ethers.provider.send("evm_increaseTime", [259200]);
-
-        await expect(cryptonDAO.finishVoting(firstProp))
-          .to.emit(cryptonDAO, "VotingFinished")
-          .withArgs(firstProp, false);
-      });
-
-      it("Should be able to successfully finish voting and execute calldata", async () => {
-        await cryptonDAO.vote(secondProp, supported);
-        await cryptonDAO.connect(alice).vote(secondProp, supported);
-        await cryptonDAO.connect(bob).vote(secondProp, supported);
-
-        await ethers.provider.send("evm_increaseTime", [259200]);
-
-        await expect(cryptonDAO.finishVoting(secondProp))
-          .to.emit(cryptonDAO, "VotingFinished")
-          .withArgs(secondProp, true);
-
-        // Token transfer fee recipient should have changed to Alice
-        expect(await daoToken.getFeeRecipient()).to.be.equal(alice.address);
-      });
-
-      it("Successfull voting executes calldata", async () => {
-        await cryptonDAO.vote(secondProp, supported);
-        await cryptonDAO.connect(alice).vote(secondProp, supported);
-        await cryptonDAO.connect(bob).vote(secondProp, supported);
-
-        await ethers.provider.send("evm_increaseTime", [259200]);
-
-        await cryptonDAO.finishVoting(secondProp);
-
-        // Token transfer fee recipient should have changed to Alice
-        expect(await daoToken.getFeeRecipient()).to.be.equal(alice.address);
       });
 
       it("Should be able to withdraw tokens after voting finished", async () => {
@@ -466,7 +429,7 @@ describe("CryptonDAO", function () {
         await cryptonDAO.connect(alice).vote(firstProp, supported);
 
         // Skipping 3 days and finishing voting
-        await ethers.provider.send("evm_increaseTime", [259200]);
+        await ethers.provider.send("evm_increaseTime", [votingPeriod]);
         await expect(cryptonDAO.finishVoting(firstProp))
           .to.emit(cryptonDAO, "VotingFinished")
           .withArgs(firstProp, true);
@@ -483,6 +446,143 @@ describe("CryptonDAO", function () {
         balanceAfter = await daoToken.balanceOf(bob.address);
         expect(balanceAfter).to.equal(balanceBefore.add(tenTokens));
       });
+
+      it("Should not be able to finish voting before 3 days from start", async () => {
+        await expect(cryptonDAO.finishVoting(firstProp)).to.be.revertedWith(
+          "Need to wait 3 days"
+        );
+      });
+    });
+  });
+
+  describe("Counting votes & quorum", function () {
+    beforeEach(async () => {
+      calldata = changeVotingRulesInterface.encodeFunctionData("changeVotingRules", [
+        newMinQuorum,
+        newVotingPeriod,
+      ]);
+      await cryptonDAO.addProposal(propDescr, cryptonDAO.address, calldata);
+
+      // Deposit tokens to be able to vote and reach quorum
+      await daoToken.approve(cryptonDAO.address, ownerBalance);
+      await daoToken.connect(alice).approve(cryptonDAO.address, aliceBalance);
+      await daoToken.connect(bob).approve(cryptonDAO.address, bobBalance);
+    });
+
+    it("votesFor > votesAgainst, quorum reached, proposal executed", async () => {
+      // Deposit tokens
+      await cryptonDAO.deposit(ownerBalance);
+      await cryptonDAO.connect(alice).deposit(aliceBalance);
+      await cryptonDAO.connect(bob).deposit(bobBalance);
+      // Vote
+      await cryptonDAO.vote(firstProp, supported);
+      await cryptonDAO.connect(alice).vote(firstProp, supported);
+      await cryptonDAO.connect(bob).vote(firstProp, notSupported);
+      // Skipping 3 days voting period
+      await ethers.provider.send("evm_increaseTime", [votingPeriod]);
+      // Finish vote
+      await expect(cryptonDAO.finishVoting(firstProp))
+        .to.emit(cryptonDAO, "VotingFinished")
+        .withArgs(firstProp, true);
+      // Check proposal executed and changed voting rules
+      expect(await cryptonDAO.minQuorum()).to.be.equal(newMinQuorum);
+      expect(await cryptonDAO.votingPeriod()).to.be.equal(newVotingPeriod);
+    });
+
+    it("votesFor > votesAgainst, quorum not reached, proposal not executed", async () => {
+      // Deposit tokens
+      await cryptonDAO.deposit(tenTokens);
+      await cryptonDAO.connect(alice).deposit(tenTokens);
+      await cryptonDAO.connect(bob).deposit(tenTokens);
+      // Vote
+      await cryptonDAO.vote(firstProp, supported);
+      await cryptonDAO.connect(alice).vote(firstProp, supported);
+      await cryptonDAO.connect(bob).vote(firstProp, notSupported);
+      // Skipping 3 days voting period
+      await ethers.provider.send("evm_increaseTime", [votingPeriod]);
+      // Finish vote
+      await expect(cryptonDAO.finishVoting(firstProp))
+        .to.emit(cryptonDAO, "VotingFinished")
+        .withArgs(firstProp, false);
+      // Check nothing changed
+      expect(await cryptonDAO.minQuorum()).to.be.equal(minQuorum);
+      expect(await cryptonDAO.votingPeriod()).to.be.equal(votingPeriod);
+    });
+
+    it("votesFor < votesAgainst, quorum reached, proposal not executed", async () => {
+      // Deposit tokens
+      await cryptonDAO.deposit(ownerBalance);
+      await cryptonDAO.connect(alice).deposit(aliceBalance);
+      await cryptonDAO.connect(bob).deposit(bobBalance);
+      // Vote
+      await cryptonDAO.vote(firstProp, supported);
+      await cryptonDAO.connect(alice).vote(firstProp, notSupported);
+      await cryptonDAO.connect(bob).vote(firstProp, notSupported);
+      // Skipping 3 days voting period
+      await ethers.provider.send("evm_increaseTime", [votingPeriod]);
+      // Finish vote
+      await expect(cryptonDAO.finishVoting(firstProp))
+        .to.emit(cryptonDAO, "VotingFinished")
+        .withArgs(firstProp, false);
+      // Check nothing changed
+      expect(await cryptonDAO.minQuorum()).to.be.equal(minQuorum);
+      expect(await cryptonDAO.votingPeriod()).to.be.equal(votingPeriod);
+    });
+
+    it("votesFor < votesAgainst, quorum not reached, proposal not executed", async () => {
+      // Deposit tokens
+      await cryptonDAO.deposit(tenTokens);
+      await cryptonDAO.connect(alice).deposit(tenTokens);
+      await cryptonDAO.connect(bob).deposit(tenTokens);
+      // Vote
+      await cryptonDAO.vote(firstProp, supported);
+      await cryptonDAO.connect(alice).vote(firstProp, notSupported);
+      await cryptonDAO.connect(bob).vote(firstProp, notSupported);
+      // Skipping 3 days voting period
+      await ethers.provider.send("evm_increaseTime", [votingPeriod]);
+      // Finish vote
+      await expect(cryptonDAO.finishVoting(firstProp))
+        .to.emit(cryptonDAO, "VotingFinished")
+        .withArgs(firstProp, false);
+      // Check nothing changed
+      expect(await cryptonDAO.minQuorum()).to.be.equal(minQuorum);
+      expect(await cryptonDAO.votingPeriod()).to.be.equal(votingPeriod);
+    });
+
+    it("votesFor = votesAgainst, quorum reached, proposal not executed", async () => {
+      // Deposit tokens
+      await cryptonDAO.deposit(ownerBalance);
+      await cryptonDAO.connect(alice).deposit(aliceBalance);
+      // Vote
+      await cryptonDAO.vote(firstProp, supported);
+      await cryptonDAO.connect(alice).vote(firstProp, notSupported);
+      // Skipping 3 days voting period
+      await ethers.provider.send("evm_increaseTime", [votingPeriod]);
+      // Finish vote
+      await expect(cryptonDAO.finishVoting(firstProp))
+        .to.emit(cryptonDAO, "VotingFinished")
+        .withArgs(firstProp, false);
+      // Check nothing changed
+      expect(await cryptonDAO.minQuorum()).to.be.equal(minQuorum);
+      expect(await cryptonDAO.votingPeriod()).to.be.equal(votingPeriod);
+    });
+
+    it("votesFor = votesAgainst, quorum not reached, proposal not executed", async () => {
+      // Deposit tokens
+      await cryptonDAO.deposit(tenTokens);
+      await cryptonDAO.connect(alice).deposit(tenTokens);
+      // Vote
+      await cryptonDAO.vote(firstProp, supported);
+      await cryptonDAO.connect(alice).vote(firstProp, notSupported);
+      // Skipping 3 days voting period
+      await ethers.provider.send("evm_increaseTime", [votingPeriod]);
+      // Finish vote
+      await expect(cryptonDAO.finishVoting(firstProp))
+        .to.emit(cryptonDAO, "VotingFinished")
+        .withArgs(firstProp, false);
+      // Check nothing changed
+      expect(await cryptonDAO.minQuorum()).to.be.equal(minQuorum);
+      expect(await cryptonDAO.votingPeriod()).to.be.equal(votingPeriod);
     });
   });
 });
