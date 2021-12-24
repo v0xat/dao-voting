@@ -34,11 +34,13 @@ function createNetworkConfig(network: keyof typeof chainIds): NetworkUserConfig 
   const url: string = `https://polygon-${network}.g.alchemy.com/v2/${alchemyApiKey}`;
   return {
     accounts: {
-      count: 2,
+      count: 3,
       mnemonic,
       // process.env.RINKEBY_PRIVATE_KEY !== undefined ? [process.env.RINKEBY_PRIVATE_KEY] : [],
     },
     chainId: chainIds[network],
+    gas: 2100000,
+    gasPrice: 8000000000,
     url,
   };
 }

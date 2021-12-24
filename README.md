@@ -22,7 +22,11 @@ To run requires `.env` file with:
 Try running some of the following tasks:
 
 ```shell
+npx hardhat grantRole --role <burner or minter> --to <address> --network mumbai
+npx hardhat mint --amount <number> --to <address> --network mumbai
+
 npx hardhat run scripts/deploy.ts --network mumbai
+
 npx hardhat coverage
 npx hardhat test test/dao.test.ts
 npx hardhat test test/token.test.ts
