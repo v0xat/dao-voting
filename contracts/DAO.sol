@@ -116,10 +116,11 @@ contract CryptonDAO is IDAO {
      * @param propID Proposal ID.
      */
     function finishVoting(uint256 propID) external {
-        require((proposals[propID].createdAt + votingPeriod) <= block.timestamp, "Need to wait 3 days");
+        Proposal storage prop = proposals[propID];
+        require((prop.createdAt + votingPeriod) <= block.timestamp, "Need to wait 3 days");
 
-        uint256 votesFor = proposals[propID].votesFor;
-        uint256 votesAgainst = proposals[propID].votesAgainst;
+        uint256 votesFor = prop.votesFor;
+        uint256 votesAgainst = prop.votesAgainst;
         
         //          ¯\_(ツ)_/¯
         // console.log("minQuorum: ", minQuorum);
@@ -132,7 +133,7 @@ contract CryptonDAO is IDAO {
         // If reached quorum and votesFor > votesAgainst, execute callData and emit event
         if ((votesFor + votesAgainst) >= (IERC20(token).totalSupply() * minQuorum / 10000)
             && votesFor > votesAgainst) {
-            emit VotingFinished(propID, execute(proposals[propID].callData, proposals[propID].target));
+            emit VotingFinished(propID, execute(prop.callData, prop.target));
         } else {
             emit VotingFinished(propID, false);
         }
@@ -224,22 +225,23 @@ contract CryptonDAO is IDAO {
      */
     function countVote(uint256 propID, address from, uint8 decision, address delegate) private {
         Proposal storage proposal = proposals[propID];
+        Vote storage vote = votes[propID][from];
 
         uint256 weight = balances[from];
 
         if (decision == uint8(Decision.Yes)) {
-            votes[propID][from].weight = weight;
-            proposal.votesFor += weight + votes[propID][from].delegateWeight;
+            vote.weight = weight;
+            proposal.votesFor += weight + vote.delegateWeight;
         } else if (decision == uint8(Decision.No)) {
-            votes[propID][from].weight = weight;
-            proposal.votesAgainst += weight + votes[propID][from].delegateWeight;
+            vote.weight = weight;
+            proposal.votesAgainst += weight + vote.delegateWeight;
         } else {
             delegates[delegate][propID].push(from);
-            votes[propID][from].delegate = delegate;
+            vote.delegate = delegate;
             votes[propID][delegate].delegateWeight += weight;
         }
 
-        votes[propID][from].decision = decision;
+        vote.decision = decision;
 
         withdrawLock[msg.sender] = (proposal.createdAt + votingPeriod) >
             withdrawLock[msg.sender] ?
