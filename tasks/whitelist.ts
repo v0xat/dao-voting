@@ -1,11 +1,9 @@
 import fs from "fs";
 import dotenv from "dotenv";
-import { ethers } from "ethers";
 import { task } from "hardhat/config";
 
-task("mint", "Mint tokens on provided account")
-  .addParam("amount", "The amount of tokens to mint")
-  .addParam("to", "The address to mint on")
+task("whitelist", "Add user to whitelist")
+  .addParam("address", "The address to add")
   .setAction(async (taskArgs, hre) => {
     const network = hre.network.name;
     const envConfig = dotenv.parse(fs.readFileSync(`.env-${network}`));
@@ -18,14 +16,7 @@ task("mint", "Mint tokens on provided account")
       process.env.CRYPTON_TOKEN_ADDRESS as string
     );
 
-    const [, alice] = await hre.ethers.getSigners();
-
-    const amount = ethers.utils.parseUnits(
-      taskArgs.amount,
-      process.env.CRYPTON_TOKEN_DECIMALS
-    );
-
-    console.log(`\nMinting ${taskArgs.amount} tokens to ${taskArgs.to}...\n`);
-    await cryptonToken.connect(alice).mint(taskArgs.to, amount);
+    console.log(`\nAdding ${taskArgs.address} to whitelist...\n`);
+    await cryptonToken.addToWhitelist(taskArgs.address);
     console.log(`Done!`);
   });

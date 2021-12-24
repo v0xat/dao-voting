@@ -24,6 +24,9 @@ Try running some of the following tasks:
 ```shell
 npx hardhat grantRole --role <burner or minter> --to <address> --network mumbai
 npx hardhat mint --amount <number> --to <address> --network mumbai
+npx hardhat whitelist --address <address> --network mumbai
+npx hardhat initDAO --dao <address> --token <address> --network mumbai
+npx hardhat deposit --amount <number> --dao <address> --network mumbai
 
 npx hardhat run scripts/deploy.ts --network mumbai
 

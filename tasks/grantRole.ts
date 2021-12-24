@@ -1,7 +1,3 @@
-// const amount = ethers.utils.parseUnits("1000.0", decimals);
-// await daoToken.connect(alice).mint(owner.address, amount);
-// await daoToken.connect(alice).mint(alice.address, amount);
-// await daoToken.connect(alice).mint(bob.address, amount);
 import fs from "fs";
 import dotenv from "dotenv";
 import { task } from "hardhat/config";
