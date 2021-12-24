@@ -82,4 +82,5 @@ interface IDAO {
     event Voted(uint256 indexed propID, address indexed voter, bool decision);
     event Delegate(uint256 indexed propID, address indexed delegator, address indexed delegate);
     event VotingFinished(uint256 indexed id, bool successful);
+    event VotingRulesChanged(uint256 newMinQuorum, uint256 newVotingPeriod);
 }

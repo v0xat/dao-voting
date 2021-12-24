@@ -215,6 +215,7 @@ contract CryptonDAO is IDAO {
     function changeVotingRules(uint256 _minQuorum, uint256 _votingPeriod) private {
         votingPeriod = _votingPeriod;
         minQuorum = _minQuorum;
+        emit VotingRulesChanged(_minQuorum, _votingPeriod);
     }
 
     /** @notice Registers a vote or delegate for specific proposal.
