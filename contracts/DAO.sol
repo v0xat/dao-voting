@@ -125,12 +125,12 @@ contract CryptonDAO is IDAO, AccessControl {
         uint256 votesAgainst = prop.votesAgainst;
         
         //          ¯\_(ツ)_/¯
-        // console.log("minQuorum: ", minQuorum);
-        // console.log("votesFor: ", votesFor);
+        // console.log("minQuorum:    ", minQuorum);
+        // console.log("votesFor:     ", votesFor);
         // console.log("votesAgainst: ", votesAgainst);
-        // console.log("total votes: ", (votesFor + votesAgainst));
+        // console.log("total votes:  ", (votesFor + votesAgainst));
         // console.log("total supply: ", IERC20(token).totalSupply());
-        // console.log("supply quorum: ", (IERC20(token).totalSupply() / 100) * minQuorum / 10000);
+        // console.log("supplyQuorum: ", (IERC20(token).totalSupply() * minQuorum / 10000));
 
         // If reached quorum and votesFor > votesAgainst, execute callData and emit event
         if ((votesFor + votesAgainst) >= (IERC20(token).totalSupply() * minQuorum / 10000)
