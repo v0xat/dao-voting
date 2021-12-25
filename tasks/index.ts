@@ -1,6 +1,6 @@
 import "./accounts.ts";
-import "./grantRole.ts";
-import "./mint.ts";
-import "./whitelist.ts";
-import "./initDAO.ts";
-import "./deposit.ts";
+import "./token/grantRole.ts";
+import "./token/mint.ts";
+import "./token/whitelist.ts";
+import "./token/initDAO.ts";
+import "./dao/deposit.ts";
