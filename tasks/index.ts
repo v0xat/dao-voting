@@ -5,3 +5,6 @@ import "./token/whitelist.ts";
 import "./token/initDAO.ts";
 import "./dao/deposit.ts";
 import "./dao/withdraw.ts";
+import "./dao/addProposal.ts";
+import "./dao/vote.ts";
+import "./dao/delegate.ts";
