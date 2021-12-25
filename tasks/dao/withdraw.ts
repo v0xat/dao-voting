@@ -6,7 +6,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 task("withdraw", "Withdraw tokens from DAO contract")
   .addParam("amount", "The amount of tokens to withdraw")
-  .addOptionalParam("account", "The address of the account to withdraw to")
+  .addOptionalParam("account", "The address to withdraw to")
   .addParam("dao", "The address of the DAO")
   .setAction(async (taskArgs, hre) => {
     const network = hre.network.name;
