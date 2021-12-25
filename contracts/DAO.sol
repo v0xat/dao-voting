@@ -4,11 +4,12 @@ pragma solidity ^0.8.10;
 
 import "hardhat/console.sol";
 import "@openzeppelin/contracts/access/AccessControl.sol";
+import "@openzeppelin/contracts/access/Ownable.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
 import "./IDAO.sol";
 
 /** @title A simple DAO contract.  */
-contract CryptonDAO is IDAO, AccessControl {
+contract CryptonDAO is IDAO, Ownable {
     using SafeERC20 for IERC20;
 
     uint256 public votingPeriod = 3 days;
@@ -26,7 +27,7 @@ contract CryptonDAO is IDAO, AccessControl {
      * @param _minQuorum Minimum quorum pct.
      */
     constructor(address _tokenAddress, uint256 _minQuorum) {
-        _setupRole(DEFAULT_ADMIN_ROLE, address(this));
+        _transferOwnership(address(this));
         minQuorum = _minQuorum;
         token = _tokenAddress;
     }
@@ -214,7 +215,7 @@ contract CryptonDAO is IDAO, AccessControl {
      * @param _minQuorum New minimum quorum (pct).
      * @param _votingPeriod New voting period (timestamp).
      */
-    function changeVotingRules(uint256 _minQuorum, uint256 _votingPeriod) external onlyRole(DEFAULT_ADMIN_ROLE) {
+    function changeVotingRules(uint256 _minQuorum, uint256 _votingPeriod) external onlyOwner {
         votingPeriod = _votingPeriod;
         minQuorum = _minQuorum;
         emit VotingRulesChanged(_minQuorum, _votingPeriod);

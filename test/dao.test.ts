@@ -121,21 +121,21 @@ describe("CryptonDAO", function () {
     });
   });
 
-  describe("Access Control", function () {
+  describe("Ownership", function () {
     it("DAO contract should be the admin of the token", async () => {
       expect(await daoToken.hasRole(adminRole, cryptonDAO.address)).to.equal(true);
     });
 
     it("DAO contract should be self-admin", async () => {
-      expect(await cryptonDAO.hasRole(adminRole, cryptonDAO.address)).to.equal(true);
+      expect(await cryptonDAO.owner()).to.equal(cryptonDAO.address);
     });
 
     it("No one can change voting rules", async () => {
       await expect(cryptonDAO.changeVotingRules(0, 0)).to.be.revertedWith(
-        `AccessControl: account ${owner.address.toLowerCase()} is missing role ${adminRole}`
+        "Ownable: caller is not the owner"
       );
       await expect(cryptonDAO.connect(alice).changeVotingRules(0, 0)).to.be.revertedWith(
-        `AccessControl: account ${alice.address.toLowerCase()} is missing role ${adminRole}`
+        "Ownable: caller is not the owner"
       );
     });
   });
