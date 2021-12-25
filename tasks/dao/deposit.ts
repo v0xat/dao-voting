@@ -6,7 +6,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 task("deposit", "Deposit tokens to DAO contract")
   .addParam("amount", "The amount of tokens to deposit")
-  .addOptionalParam("account", "The address to deposit from")
+  .addOptionalParam("from", "The address to deposit from. By default grab first signer")
   .addParam("dao", "The address of the DAO")
   .setAction(async (taskArgs, hre) => {
     const network = hre.network.name;
@@ -26,8 +26,8 @@ task("deposit", "Deposit tokens to DAO contract")
     );
 
     let account: SignerWithAddress;
-    if (taskArgs.account) {
-      account = await hre.ethers.getSigner(taskArgs.account);
+    if (taskArgs.from) {
+      account = await hre.ethers.getSigner(taskArgs.from);
     } else {
       [account] = await hre.ethers.getSigners();
     }
