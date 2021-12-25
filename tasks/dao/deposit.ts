@@ -2,9 +2,11 @@ import fs from "fs";
 import dotenv from "dotenv";
 import { ethers } from "ethers";
 import { task } from "hardhat/config";
+import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 task("deposit", "Deposit tokens to DAO contract")
   .addParam("amount", "The amount of tokens to deposit")
+  .addOptionalParam("account", "The address to deposit from")
   .addParam("dao", "The address of the DAO")
   .setAction(async (taskArgs, hre) => {
     const network = hre.network.name;
@@ -23,11 +25,17 @@ task("deposit", "Deposit tokens to DAO contract")
       taskArgs.dao as string
     );
 
-    const [owner] = await hre.ethers.getSigners();
-    const ownerBalance = await cryptonToken.balanceOf(owner.address);
+    let account: SignerWithAddress;
+    if (taskArgs.account) {
+      account = await hre.ethers.getSigner(taskArgs.account);
+    } else {
+      [account] = await hre.ethers.getSigners();
+    }
+
+    const accountBalance = await cryptonToken.balanceOf(account.address);
     console.log(
-      `Owner balance: ${ethers.utils.formatUnits(
-        ownerBalance,
+      `Account balance: ${ethers.utils.formatUnits(
+        accountBalance,
         process.env.CRYPTON_TOKEN_DECIMALS
       )} tokens`
     );
@@ -38,10 +46,10 @@ task("deposit", "Deposit tokens to DAO contract")
     );
 
     console.log(`\nApproving ${taskArgs.amount} tokens to ${dao.address}...\n`);
-    await cryptonToken.approve(dao.address, amount);
+    await cryptonToken.connect(account).approve(dao.address, amount);
     console.log(`Done!`);
 
     console.log(`\nMaking a deposit...\n`);
-    await dao.deposit(amount);
+    await dao.connect(account).deposit(amount);
     console.log(`Done!`);
   });
