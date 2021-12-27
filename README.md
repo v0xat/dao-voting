@@ -28,13 +28,13 @@ npx hardhat coverage
 npx hardhat test test/dao.test.ts
 npx hardhat test test/token.test.ts
 
-npx hardhat grantRole --role <burner or minter> --to <address>
-npx hardhat mint --amount <number> --to <address>
-npx hardhat whitelist --address <address>
-npx hardhat initDAO --dao <address> --token <address>
-npx hardhat deposit --amount <number> --OPTIONAL-from <address> --dao <address>
-npx hardhat withdraw --amount 5 --OPTIONAL-to <address> --dao <address>
-npx hardhat addProposal --OPTIONAL-from <address> --recipient <address> --OPTIONAL-dao <address> --OPTIONAL-token <address>
-npx hardhat vote --id <prop id> --support <true/false> --OPTIONAL-from <address> --OPTIONAL-dao <address>
-npx hardhat delegate --id <prop id> --to <address> --OPTIONAL-from <address> --OPTIONAL-dao <address>
+npx hardhat grantRole --role <burner or minter> --to <addrs>
+npx hardhat mint --amount <number> --to <addrs>
+npx hardhat whitelist --address <addrs>
+npx hardhat initDAO --dao <addrs> --token <addrs>
+npx hardhat deposit --amount <number> --dao <addrs> [--from <addrs>]
+npx hardhat withdraw --amount 5 --dao <addrs> [--to <addrs>]
+npx hardhat addProposal --recipient <addrs> [--from <addrs>] [--dao <addrs>] [--token <addrs>]
+npx hardhat vote --id <prop id> --support <true/false> [--from <addrs>] [--dao <addrs>]
+npx hardhat delegate --id <prop id> --to <addrs> -[--from <addrs>] [--dao <addrs>]
 ```
