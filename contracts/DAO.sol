@@ -179,23 +179,6 @@ contract CryptonDAO is IDAO, Ownable {
             Proposal memory p = proposals[i];
             props[i] = p;
         }
-
-        // uint256[] memory votesFor = new uint[](end);
-        // uint256[] memory votesAgainst = new uint[](end);
-        // uint256[] memory createdAt = new uint[](end);
-        // address[] memory target = new address[](end);
-        // string[]  memory description = new string[](end);
-        // bytes[]   memory callData = new bytes[](end);
-        // for (uint i = start; i < end; i++) {
-        //     Proposal memory prop = proposals[i];
-        //     votesFor[i] = prop.votesFor;
-        //     votesAgainst[i] = prop.votesAgainst;
-        //     createdAt[i] = prop.createdAt;
-        //     target[i] = prop.target;
-        //     description[i] = prop.description;
-        //     callData[i] = prop.callData;
-        // }
-        // return (votesFor, votesAgainst, createdAt, target, description, callData);
     }
 
     /** @notice Returns Decision enum keys as string.

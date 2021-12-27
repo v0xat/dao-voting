@@ -127,12 +127,6 @@ contract CryptonToken is ERC20, AccessControl {
         if (!whitelisted[from] && from != address(0) && to != address(0)) {
             uint256 fee = amount * feeRate / 10000;
 
-            //          ¯\_(ツ)_/¯
-            // console.log("balances[from]: ", balanceOf(from));
-            // console.log("feeRate: ", feeRate);
-            // console.log("amount: ", amount);
-            // console.log("fee: ", fee);
-
             require(balanceOf(from) >= (amount + fee), "Not enough to pay fee");
 
             _burn(from, fee);
