@@ -7,7 +7,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 task("deposit", "Deposit tokens to DAO contract")
   .addParam("amount", "The amount of tokens to deposit")
   .addOptionalParam("from", "The address to deposit from. By default grab first signer")
-  .addParam("dao", "The address of the DAO")
+  .addOptionalParam("dao", "The address of the DAO. By default grab it from .env")
   .setAction(async (taskArgs, hre) => {
     const network = hre.network.name;
     const envConfig = dotenv.parse(fs.readFileSync(`.env-${network}`));
@@ -22,7 +22,7 @@ task("deposit", "Deposit tokens to DAO contract")
 
     const dao = await hre.ethers.getContractAt(
       process.env.CRYPTON_DAO_NAME as string,
-      taskArgs.dao as string
+      taskArgs.dao || (process.env.CRYPTON_DAO_ADDRESS as string)
     );
 
     let account: SignerWithAddress;
