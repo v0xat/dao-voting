@@ -17,14 +17,6 @@ const adminRole = ethers.constants.HashZero;
 const minterRole = "0x9f2df0fed2c77648de5860a4cc508cd0818c85b8b8a1ab4ceeef8d981c8956a6";
 const burnerRole = "0x51f4231475d91734c657e212cfb2e9728a863d53c9057d6ce6ca203d6e5cfd5d";
 
-// Encode function
-const changeFeeRecipientAbi = ["function changeFeeRecipient(address to)"];
-const changeFeeRecipientInterface = new ethers.utils.Interface(changeFeeRecipientAbi);
-const changeVotingRulesAbi = [
-  "function changeVotingRules(uint256 _minQuorum, uint256 _votingPeriod)",
-];
-const changeVotingRulesInterface = new ethers.utils.Interface(changeVotingRulesAbi);
-
 // Sample DAO data
 const firstProp = 0;
 const secondProp = 1;
@@ -56,8 +48,14 @@ describe("CryptonDAO", function () {
     CryptonToken = await ethers.getContractFactory("CryptonToken");
     CryptonDAO = await ethers.getContractFactory("CryptonDAO");
 
+    // const changeFeeRecipientAbi = ["function changeFeeRecipient(address to)"];
+    // const changeFeeRecipientInterface = new ethers.utils.Interface(changeFeeRecipientAbi);
     // In tests we'll be proposing to change fee recipient to Alice
-    calldata = changeFeeRecipientInterface.encodeFunctionData("changeFeeRecipient", [
+    // calldata = changeFeeRecipientInterface.encodeFunctionData("changeFeeRecipient", [
+    //   alice.address,
+    // ]);
+
+    calldata = CryptonToken.interface.encodeFunctionData("changeFeeRecipient", [
       alice.address,
     ]);
   });
@@ -457,7 +455,7 @@ describe("CryptonDAO", function () {
 
   describe("Counting votes & quorum", function () {
     beforeEach(async () => {
-      calldata = changeVotingRulesInterface.encodeFunctionData("changeVotingRules", [
+      calldata = CryptonDAO.interface.encodeFunctionData("changeVotingRules", [
         newMinQuorum,
         newVotingPeriod,
       ]);

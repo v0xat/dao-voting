@@ -1,11 +1,8 @@
 import fs from "fs";
 import dotenv from "dotenv";
-import { ethers } from "ethers";
 import { task } from "hardhat/config";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
-const changeFeeRecipientAbi = ["function changeFeeRecipient(address to)"];
-const changeFeeRecipientInterface = new ethers.utils.Interface(changeFeeRecipientAbi);
 const description = "Change fee recipient";
 
 task("addProposal", "Add proposal to change fee recipient")
@@ -35,10 +32,9 @@ task("addProposal", "Add proposal to change fee recipient")
       [account] = await hre.ethers.getSigners();
     }
 
-    const calldata = changeFeeRecipientInterface.encodeFunctionData(
-      "changeFeeRecipient",
-      [taskArgs.recipient]
-    );
+    const calldata = dao.interface.encodeFunctionData("changeFeeRecipient", [
+      taskArgs.recipient,
+    ]);
 
     console.log(`\nCreating a proposal...\n`);
     await dao
