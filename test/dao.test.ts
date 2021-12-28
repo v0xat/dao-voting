@@ -48,13 +48,6 @@ describe("CryptonDAO", function () {
     CryptonToken = await ethers.getContractFactory("CryptonToken");
     CryptonDAO = await ethers.getContractFactory("CryptonDAO");
 
-    // const changeFeeRecipientAbi = ["function changeFeeRecipient(address to)"];
-    // const changeFeeRecipientInterface = new ethers.utils.Interface(changeFeeRecipientAbi);
-    // In tests we'll be proposing to change fee recipient to Alice
-    // calldata = changeFeeRecipientInterface.encodeFunctionData("changeFeeRecipient", [
-    //   alice.address,
-    // ]);
-
     calldata = CryptonToken.interface.encodeFunctionData("changeFeeRecipient", [
       alice.address,
     ]);
