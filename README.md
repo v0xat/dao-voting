@@ -3,8 +3,8 @@
 Simple DAO voting contract with it's own ERC20 token.
 
 Verified contracts on Polygonscan:
-- token: https://mumbai.polygonscan.com/token/0x23040F3744409EB89f299F4BE408197Bd6876A82
-- dao: https://mumbai.polygonscan.com/address/0xEF22aB4B8B98b7BB988BB0cf20aF570817EC0739
+- token: https://mumbai.polygonscan.com/token/0x1FFEA5dB9FF95DD59EC2D39579dDBa6D6319Caac
+- dao: https://mumbai.polygonscan.com/address/0x2aEf4bfa1C2CCFB67b78EFca2bCD1b181d973566
 
 Main features:
 - Any user can add proposals
@@ -32,7 +32,7 @@ npx hardhat grantRole --role <burner or minter> --to <addrs>
 npx hardhat mint --amount <number> --to <addrs>
 npx hardhat whitelist --address <addrs>
 npx hardhat initDAO --dao <addrs> --token <addrs>
-npx hardhat deposit --amount <number> --dao <addrs> [--from <addrs>]
+npx hardhat deposit --amount <number> [--dao <addrs>] [--from <addrs>]
 npx hardhat withdraw --amount 5 --dao <addrs> [--to <addrs>]
 npx hardhat addProposal --recipient <addrs> [--from <addrs>] [--dao <addrs>] [--token <addrs>]
 npx hardhat vote --id <prop id> --support <true/false> [--from <addrs>] [--dao <addrs>]
