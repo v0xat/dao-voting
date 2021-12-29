@@ -1,6 +1,9 @@
 import "./accounts.ts";
 import "./token/grantRole.ts";
+import "./token/changeFeeRate.ts";
+import "./token/changeFeeRecipient.ts";
 import "./token/mint.ts";
+import "./token/burn.ts";
 import "./token/whitelist.ts";
 import "./token/initDAO.ts";
 import "./dao/deposit.ts";
