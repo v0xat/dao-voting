@@ -18,7 +18,7 @@ task("mint", "Mint tokens on provided account")
       taskArgs.token || (process.env.CRYPTON_TOKEN_ADDRESS as string)
     );
 
-    const [, alice] = await hre.ethers.getSigners();
+    // const [, alice] = await hre.ethers.getSigners();
 
     const amount = hre.ethers.utils.parseUnits(
       taskArgs.amount,
@@ -26,6 +26,6 @@ task("mint", "Mint tokens on provided account")
     );
 
     console.log(`\nMinting ${taskArgs.amount} tokens to ${taskArgs.to}...\n`);
-    await cryptonToken.connect(alice).mint(taskArgs.to, amount);
+    await cryptonToken.mint(taskArgs.to, amount);
     console.log(`Done!`);
   });

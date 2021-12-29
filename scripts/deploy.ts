@@ -39,7 +39,7 @@ async function main() {
   fs.appendFileSync(
     `.env-${network}`,
     `\r\# Deployed at \rCRYPTON_TOKEN_ADDRESS=${cryptonToken.address}\r
-     \r\# Deployed at \rCRYPTON_DAO=${cryptonDAO.address}\r`
+     \r\# Deployed at \rCRYPTON_DAO_ADDRESS=${cryptonDAO.address}\r`
   );
 }
 

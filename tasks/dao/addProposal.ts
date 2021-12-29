@@ -25,6 +25,11 @@ task("addProposal", "Add proposal to change fee recipient")
       taskArgs.dao || (process.env.CRYPTON_DAO_ADDRESS as string)
     );
 
+    const cryptonToken = await hre.ethers.getContractAt(
+      process.env.CRYPTON_TOKEN_NAME as string,
+      taskArgs.token || (process.env.CRYPTON_TOKEN_ADDRESS as string)
+    );
+
     let account: SignerWithAddress;
     if (taskArgs.from) {
       account = await hre.ethers.getSigner(taskArgs.from);
@@ -32,7 +37,7 @@ task("addProposal", "Add proposal to change fee recipient")
       [account] = await hre.ethers.getSigners();
     }
 
-    const calldata = dao.interface.encodeFunctionData("changeFeeRecipient", [
+    const calldata = cryptonToken.interface.encodeFunctionData("changeFeeRecipient", [
       taskArgs.recipient,
     ]);
 

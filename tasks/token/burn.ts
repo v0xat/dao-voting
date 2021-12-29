@@ -18,7 +18,7 @@ task("burn", "Burn tokens on provided account")
       taskArgs.token || (process.env.CRYPTON_TOKEN_ADDRESS as string)
     );
 
-    const [, , bob] = await hre.ethers.getSigners();
+    // const [, , bob] = await hre.ethers.getSigners();
 
     const amount = hre.ethers.utils.parseUnits(
       taskArgs.amount,
@@ -30,6 +30,6 @@ task("burn", "Burn tokens on provided account")
         taskArgs.token || (process.env.CRYPTON_TOKEN_ADDRESS as string)
       }...\n`
     );
-    await cryptonToken.connect(bob).burn(taskArgs.from, amount);
+    await cryptonToken.burn(taskArgs.from, amount);
     console.log(`Done!`);
   });
