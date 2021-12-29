@@ -11,3 +11,4 @@ import "./dao/withdraw.ts";
 import "./dao/addProposal.ts";
 import "./dao/vote.ts";
 import "./dao/delegate.ts";
+import "./dao/finishVoting.ts";
