@@ -18,6 +18,7 @@ interface IDAO {
         uint256 votesAgainst;
         uint256 createdAt;
         address target;
+        bool isOpen;
         string description;
         bytes callData;
     }

@@ -7,7 +7,7 @@ import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/dist/src/signer-wit
 const tokenName = "CryptonToken";
 const symbol = "CRPT";
 const decimals = 18;
-const feeRate = 150; // 1.5% fee in basis points ?
+const feeRate = 150; // 1.5% fee
 const tenTokens = ethers.utils.parseUnits("10.0", decimals);
 const twentyTokens = ethers.utils.parseUnits("20.0", decimals);
 
@@ -22,9 +22,8 @@ const firstProp = 0;
 const secondProp = 1;
 const supported = true;
 const notSupported = false;
-const delegated = 3;
 const propDescr = "description";
-const minQuorum = 5000; // 50% quorum in basis points ?
+const minQuorum = 5000; // 50% quorum
 const votingPeriod = 259200; // 3 days
 const newMinQuorum = 7000; // 70% quorum
 const newVotingPeriod = 86400; // 1 day
@@ -156,6 +155,7 @@ describe("CryptonDAO", function () {
       const propInfo = await cryptonDAO.proposals(firstProp);
       expect(propInfo.description).to.be.equal(propDescr);
       expect(propInfo.target).to.be.equal(daoToken.address);
+      expect(propInfo.isOpen).to.be.equal(true);
       expect(propInfo.callData).to.be.equal(calldata);
       expect(propInfo.votesFor).to.be.equal(ethers.constants.Zero);
       expect(propInfo.votesAgainst).to.be.equal(ethers.constants.Zero);
@@ -318,12 +318,6 @@ describe("CryptonDAO", function () {
         expect(propInfo.votesAgainst).to.be.equal(ethers.constants.Zero);
       });
 
-      // it("Should not be able to vote without deposit", async () => {
-      //   await expect(
-      //     cryptonDAO.connect(addrs[0]).vote(firstProp, supported)
-      //   ).to.be.revertedWith("Make a deposit to vote");
-      // });
-
       it("Should not be able to vote twice for one proposal", async () => {
         await cryptonDAO.vote(firstProp, supported);
         await expect(cryptonDAO.vote(firstProp, supported)).to.be.revertedWith(
@@ -441,6 +435,14 @@ describe("CryptonDAO", function () {
       it("Should not be able to finish voting before 3 days from start", async () => {
         await expect(cryptonDAO.finishVoting(firstProp)).to.be.revertedWith(
           "Need to wait 3 days"
+        );
+      });
+
+      it("Should not be able to finish voting multiple times", async () => {
+        await ethers.provider.send("evm_increaseTime", [votingPeriod]);
+        await expect(cryptonDAO.finishVoting(firstProp));
+        await expect(cryptonDAO.finishVoting(firstProp)).to.be.revertedWith(
+          "Voting ended"
         );
       });
     });

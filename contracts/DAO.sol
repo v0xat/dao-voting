@@ -68,6 +68,7 @@ contract CryptonDAO is IDAO, Ownable {
         Proposal storage p = proposals[proposalID];
         p.description = description;
         p.target = target;
+        p.isOpen = true;
         p.callData = callData;
         p.createdAt = block.timestamp;
 
@@ -108,7 +109,6 @@ contract CryptonDAO is IDAO, Ownable {
         );
         require(to != msg.sender, "Can't self-delegate");
         require(proposal.createdAt + votingPeriod > block.timestamp, "Voting ended");
-        // require(balances[msg.sender] > 0, "Make a deposit to delegate");
 
         countVote(propID, msg.sender, uint8(Decision.Delegate), to);
 
@@ -120,20 +120,15 @@ contract CryptonDAO is IDAO, Ownable {
      */
     function finishVoting(uint256 propID) external {
         Proposal storage prop = proposals[propID];
+        require(prop.isOpen, "Voting ended");
         require((prop.createdAt + votingPeriod) <= block.timestamp, "Need to wait 3 days");
+
+        prop.isOpen = false;
 
         uint256 votesFor = prop.votesFor;
         uint256 votesAgainst = prop.votesAgainst;
-        
-        //          ¯\_(ツ)_/¯
-        // console.log("minQuorum:    ", minQuorum);
-        // console.log("votesFor:     ", votesFor);
-        // console.log("votesAgainst: ", votesAgainst);
-        // console.log("total votes:  ", (votesFor + votesAgainst));
-        // console.log("total supply: ", IERC20(token).totalSupply());
-        // console.log("supplyQuorum: ", (IERC20(token).totalSupply() * minQuorum / 10000));
 
-        // If reached quorum and votesFor > votesAgainst, execute callData and emit event
+        // If reached quorum and votesFor > votesAgainst, execute calldata and emit event
         if ((votesFor + votesAgainst) >= (IERC20(token).totalSupply() * minQuorum / 10000)
             && votesFor > votesAgainst) {
             emit VotingFinished(propID, execute(prop.callData, prop.target));
