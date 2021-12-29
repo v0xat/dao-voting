@@ -1,6 +1,5 @@
 import fs from "fs";
 import dotenv from "dotenv";
-import { ethers } from "ethers";
 import { task } from "hardhat/config";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -34,13 +33,13 @@ task("deposit", "Deposit tokens to DAO contract")
 
     const accountBalance = await cryptonToken.balanceOf(account.address);
     console.log(
-      `Account balance: ${ethers.utils.formatUnits(
+      `Account balance: ${hre.ethers.utils.formatUnits(
         accountBalance,
         process.env.CRYPTON_TOKEN_DECIMALS
       )} tokens`
     );
 
-    const amount = ethers.utils.parseUnits(
+    const amount = hre.ethers.utils.parseUnits(
       taskArgs.amount,
       process.env.CRYPTON_TOKEN_DECIMALS
     );

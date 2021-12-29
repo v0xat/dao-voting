@@ -1,6 +1,5 @@
 import fs from "fs";
 import dotenv from "dotenv";
-import { ethers } from "ethers";
 import { task } from "hardhat/config";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
@@ -27,7 +26,7 @@ task("withdraw", "Withdraw tokens from DAO contract")
       [account] = await hre.ethers.getSigners();
     }
 
-    const amount = ethers.utils.parseUnits(
+    const amount = hre.ethers.utils.parseUnits(
       taskArgs.amount,
       process.env.CRYPTON_TOKEN_DECIMALS
     );

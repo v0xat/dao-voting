@@ -1,6 +1,5 @@
 import fs from "fs";
 import dotenv from "dotenv";
-import { ethers } from "ethers";
 import { task } from "hardhat/config";
 
 task("mint", "Mint tokens on provided account")
@@ -20,7 +19,7 @@ task("mint", "Mint tokens on provided account")
 
     const [, alice] = await hre.ethers.getSigners();
 
-    const amount = ethers.utils.parseUnits(
+    const amount = hre.ethers.utils.parseUnits(
       taskArgs.amount,
       process.env.CRYPTON_TOKEN_DECIMALS
     );
