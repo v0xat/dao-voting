@@ -1,6 +1,6 @@
 import fs from "fs";
 import dotenv from "dotenv";
-import hre, { ethers } from "hardhat";
+import hre from "hardhat";
 import { SignerWithAddress } from "@nomiclabs/hardhat-ethers/signers";
 
 const network = hre.network.name;
@@ -10,13 +10,15 @@ for (const parameter in envConfig) {
 }
 
 async function main() {
-  const [owner]: SignerWithAddress[] = await ethers.getSigners();
+  const [owner]: SignerWithAddress[] = await hre.ethers.getSigners();
   console.log("Owner address: ", owner.address);
 
   const balance = await owner.getBalance();
-  console.log(`Owner account balance: ${ethers.utils.formatEther(balance).toString()}`);
+  console.log(
+    `Owner account balance: ${hre.ethers.utils.formatEther(balance).toString()}`
+  );
 
-  const CryptonToken = await ethers.getContractFactory("CryptonToken");
+  const CryptonToken = await hre.ethers.getContractFactory("CryptonToken");
   const cryptonToken = await CryptonToken.deploy(
     process.env.CRYPTON_TOKEN_NAME as string,
     process.env.CRYPTON_TOKEN_SYMBOL as string,
@@ -26,7 +28,7 @@ async function main() {
   await cryptonToken.deployed();
   console.log(`CryptonToken deployed to ${cryptonToken.address}`);
 
-  const CryptonDAO = await ethers.getContractFactory("CryptonDAO");
+  const CryptonDAO = await hre.ethers.getContractFactory("CryptonDAO");
   const cryptonDAO = await CryptonDAO.deploy(
     cryptonToken.address as string,
     process.env.CRYPTON_DAO_QUORUM as string
