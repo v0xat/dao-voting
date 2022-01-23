@@ -1,10 +1,10 @@
 # DAO
 
-Simple DAO voting contract with it's own ERC20 token.
+*This is a training project, you should not use any of it's code in production because it's not properly audited and tested.*
 
-Verified contracts on Polygonscan:
-- token: https://mumbai.polygonscan.com/token/0x1FFEA5dB9FF95DD59EC2D39579dDBa6D6319Caac
-- dao: https://mumbai.polygonscan.com/address/0x2aEf4bfa1C2CCFB67b78EFca2bCD1b181d973566
+### Description
+
+Simple DAO voting contract.
 
 Main features:
 - Any user can add proposals
@@ -12,6 +12,12 @@ Main features:
 - Users can delegate their voting power on certain proposal to any other users
 - Users can participate in multiple proposals with same tokens
 - After participating in the voting, the withdrawal is "frozen" until the end of the voting
+
+### Verified contracts on Polygonscan:
+- DAO: https://mumbai.polygonscan.com/address/0x2aEf4bfa1C2CCFB67b78EFca2bCD1b181d973566
+- Token: https://mumbai.polygonscan.com/token/0x1FFEA5dB9FF95DD59EC2D39579dDBa6D6319Caac
+
+### How to run
 
 To run requires `.env` file with:
 - MNEMONIC
